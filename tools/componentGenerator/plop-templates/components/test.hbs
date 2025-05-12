@@ -1,0 +1,11 @@
+// plop-templates/component/test.hbs
+import { render, screen } from '@testing-library/react'
+import { {{name}} } from './{{name}}'
+
+describe('{{name}}', () => {
+it('renders successfully', () => {
+render(
+<{{name}} />)
+// Add your test assertions here
+})
+})
