@@ -45,6 +45,9 @@ function main() {
     case 'tailwind':
       installTailwindSetup();
       break;
+    case 'shadcn':
+      installShadcnSetup();
+      break;
     case 'help':
       showHelp();
       break;
@@ -65,6 +68,7 @@ function showHelp() {
   console.log('  npx graftthis routes         Install routes generator');
   console.log('  npx graftthis component      Install component generator');
   console.log('  npx graftthis tailwind       Set up Tailwind CSS for your project');
+  console.log('  npx graftthis shadcn         Set up shadcn UI components for your project');
   console.log('  npx graftthis help           Show this help message');
 }
 
@@ -78,6 +82,7 @@ function installAllTools() {
   installGenerateRoutesTool();
   installComponentGeneratorTool();
   installTailwindSetup();
+  installShadcnSetup();
   
   console.log('\nAll tools installed successfully!');
 }
@@ -390,12 +395,19 @@ function installTailwindSetup() {
     
     // Check if styles are already imported
     if (!documentContent.includes("import styles from './styles.css?url'")) {
-      // Add the import statement at the top of the file
-      documentContent = documentContent.replace(
-        /import\s+.*?from\s+['"].*?['"];?/,
-        (match) => `${match}\nimport styles from './styles.css?url';`
-      );
+      // Always add the import statement at the very top of the file
+      documentContent = `import styles from './styles.css?url';\n\n${documentContent}`;
       console.log('✓ Added styles import to Document.tsx');
+      
+      // Double-check that the import was added
+      if (!documentContent.includes("import styles from './styles.css?url'")) {
+        console.log('⚠️ Warning: Import may not have been added correctly. Trying alternative method...');
+        // Try a more direct approach by splitting into lines
+        const lines = documentContent.split('\n');
+        lines.unshift(`import styles from './styles.css?url';`);
+        documentContent = lines.join('\n');
+        console.log('✓ Added styles import using alternative method');
+      }
     }
     
     // Check if the link tag is already in the head
@@ -439,6 +451,27 @@ function installTailwindSetup() {
     
   } catch (error) {
     console.error(`Error setting up Tailwind CSS: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Run the shadcn setup directly on the current project
+ */
+function installShadcnSetup() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, 'shadcnSetup');
+  
+  console.log('Setting up shadcn for your project...');
+  
+  try {
+    // Require the shadcnSetup module
+    const shadcnSetup = require(toolPath);
+    
+    // Run the setup directly
+    shadcnSetup.install();
+  } catch (error) {
+    console.error(`Error setting up shadcn: ${error.message}`);
     process.exit(1);
   }
 }
