@@ -114,6 +114,36 @@ The command will automatically install the required dependencies for you:
 pnpm install tailwindcss @tailwindcss/vite
 ```
 
+### shadcnSetup
+
+The `shadcn` tool sets up shadcn UI components for your RWSDK project.
+
+```bash
+npx graftthis shadcn
+```
+
+This command:
+
+1. Copies a pre-configured `components.json` file to your project's root directory
+2. Installs all necessary dependencies for shadcn UI:
+   - class-variance-authority
+   - clsx
+   - tailwind-merge
+   - lucide-react
+   - @radix-ui/react-slot
+   - tw-animate-css
+3. Sets up the required configuration:
+   - Updates `tsconfig.json` with the baseUrl setting
+   - Adds path aliases to `vite.config.ts` for the "@" import
+4. Creates the necessary files:
+   - Adds a `src/app/lib/utils.ts` file with the `cn` utility function
+   - Sets up `src/app/styles.css` with shadcn theme variables
+5. Updates the `src/app/Document.tsx` file to:
+   - Import the styles
+   - Add a link tag to the head
+
+After installation, you can add shadcn components to your project by installing the specific Radix UI components you need and copying the component code from the shadcn website.
+
 ## Requirements
 
 - Node.js 14+
