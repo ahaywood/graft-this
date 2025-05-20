@@ -1,0 +1,7 @@
+{
+  "name": "seed-to-sql",
+  "version": "1.0.0",
+  "description": "Converts Redwood seed files to raw SQL",
+  "main": "seedToSql.mjs",
+  "type": "module"
+}

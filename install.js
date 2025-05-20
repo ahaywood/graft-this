@@ -48,6 +48,9 @@ function main() {
     case 'shadcn':
       installShadcnSetup();
       break;
+    case 'seedtosql':
+      installSeedToSqlTool();
+      break;
     case 'help':
       showHelp();
       break;
@@ -69,6 +72,7 @@ function showHelp() {
   console.log('  npx graftthis component      Install component generator');
   console.log('  npx graftthis tailwind       Set up Tailwind CSS for your project');
   console.log('  npx graftthis shadcn         Set up shadcn UI components for your project');
+  console.log('  npx graftthis seedtosql      Install Seed to SQL converter');
   console.log('  npx graftthis help           Show this help message');
 }
 
@@ -83,6 +87,7 @@ function installAllTools() {
   installComponentGeneratorTool();
   installTailwindSetup();
   installShadcnSetup();
+  installSeedToSqlTool();
   
   console.log('\nAll tools installed successfully!');
 }
@@ -472,6 +477,52 @@ function installShadcnSetup() {
     shadcnSetup.install();
   } catch (error) {
     console.error(`Error setting up shadcn: ${error.message}`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Install the Seed to SQL converter tool to the current project
+ */
+function installSeedToSqlTool() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, 'seedToSql');
+  
+  console.log('Installing Seed to SQL converter tool...');
+  
+  try {
+    // Create scripts directory if it doesn't exist
+    const scriptsDir = path.join(targetPath, 'scripts');
+    fs.mkdirSync(scriptsDir, { recursive: true });
+    
+    // Copy seedToSql.mjs to scripts directory
+    const sourcePath = path.join(toolPath, 'seedToSql.mjs');
+    const destPath = path.join(scriptsDir, 'seedToSql.mjs');
+    
+    if (!fs.existsSync(sourcePath)) {
+      console.error(`Error: seedToSql.mjs not found at ${sourcePath}`);
+      process.exit(1);
+    }
+    
+    fs.copyFileSync(sourcePath, destPath);
+    console.log(`✓ Copied seedToSql.mjs to ${destPath}`);
+    
+    // Make the script executable
+    try {
+      fs.chmodSync(destPath, '755');
+      console.log(`✓ Made seedToSql.mjs executable`);
+    } catch (error) {
+      console.warn(`Warning: Could not make seedToSql.mjs executable: ${error.message}`);
+    }
+    
+    // Add script to package.json
+    addScriptToPackageJson(targetPath, 'seedtosql', 'node scripts/seedToSql.mjs');
+    
+    console.log('✓ Seed to SQL converter tool installed successfully!');
+    console.log('\nUsage:');
+    console.log('  npm run seedtosql -- --input <path-to-seed-file> [--output <path-to-output-sql>]');
+  } catch (error) {
+    console.error(`Error installing Seed to SQL converter tool: ${error.message}`);
     process.exit(1);
   }
 }
