@@ -22,6 +22,7 @@ npx graftthis
 npx graftthis routes
 npx graftthis component
 npx graftthis tailwind
+npx graftthis seedtosql
 
 # Show help
 npx graftthis help
@@ -143,6 +144,36 @@ This command:
    - Add a link tag to the head
 
 After installation, you can add shadcn components to your project by installing the specific Radix UI components you need and copying the component code from the shadcn website.
+
+### seedToSql
+
+The `seedToSql` tool converts Redwood.js seed files to raw SQL statements that can be executed directly against your database.
+
+```bash
+npx graftthis seedtosql
+```
+
+This command:
+
+1. Copies the `seedToSql.mjs` script to your project's `scripts` directory
+2. Makes the script executable
+3. Adds a `seedtosql` script to your project's package.json file that runs: `node scripts/seedToSql.mjs`
+
+After installation, you can convert seed files to SQL by running:
+
+```bash
+# Convert a specific seed file
+npm run seedtosql -- --input <path-to-seed-file> [--output <path-to-output-sql>]
+```
+
+Features:
+
+- Converts Prisma `create` operations to `INSERT` statements
+- Converts Prisma `createMany` operations to multiple `INSERT` statements
+- Preserves raw SQL commands from `$executeRawUnsafe`
+- Handles nested relations and connections
+- Supports TypeScript and JavaScript seed files
+- No external dependencies required
 
 ## Requirements
 

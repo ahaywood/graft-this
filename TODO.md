@@ -173,3 +173,8 @@
             }
             ```
 
+# Seed to SQL
+- [ ] Might be helpful to add the remote seed command to the package.json
+        `npx wrangler d1 execute applywize-linguistic-antlion --remote --file=./src/scripts/seed.sql`
+- [ ] When running the input command, might be helpful to assume it's in the seed directory.
+- [ ] If no file is provided for the input, then convert all the seed files in the folder.
