@@ -343,7 +343,7 @@ function installTailwindSetup() {
       process.exit(1);
     }
     
-    // Step 2: Create the styles.css file
+    // Step 2: Create or update the styles.css file
     const stylesDir = path.join(targetPath, 'src', 'app');
     const stylesPath = path.join(stylesDir, 'styles.css');
     
@@ -351,8 +351,23 @@ function installTailwindSetup() {
       fs.mkdirSync(stylesDir, { recursive: true });
     }
     
-    fs.writeFileSync(stylesPath, '@import "tailwindcss";');
-    console.log(`✓ Created styles.css file at ${stylesPath}`);
+    if (fs.existsSync(stylesPath)) {
+      // File exists, check if it already has the tailwind import
+      let stylesContent = fs.readFileSync(stylesPath, 'utf8');
+      
+      if (!stylesContent.includes('@import "tailwindcss"')) {
+        // Add the import at the top of the file
+        stylesContent = '@import "tailwindcss";\n' + stylesContent;
+        fs.writeFileSync(stylesPath, stylesContent);
+        console.log(`✓ Added Tailwind import to existing styles.css file at ${stylesPath}`);
+      } else {
+        console.log(`✓ Tailwind import already exists in styles.css`);
+      }
+    } else {
+      // File doesn't exist, create it with just the tailwind import
+      fs.writeFileSync(stylesPath, '@import "tailwindcss";');
+      console.log(`✓ Created styles.css file at ${stylesPath}`);
+    }
     
     // Step 3: Update the vite.config.mts file
     let viteConfig = fs.readFileSync(viteConfigPath, 'utf8');

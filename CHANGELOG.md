@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated ShadCN setup tool to be compatible with the latest version of RedwoodSDK
 - Removed unnecessary configuration for tsconfig.json and vite.config.mts files
 - Streamlined the setup process for ShadCN UI integration
+- Fixed Tailwind setup tool to preserve existing styles.css content instead of overwriting it
 
 ## [0.3.0] - 2025-05-20
 
