@@ -50,7 +50,7 @@ async function setupShadcn() {
 
     if (!tailwindInstalled) {
       console.log("🌬️ Tailwind not found. Installing Tailwind...");
-      execSync("npx graftthis tailwind", { stdio: "inherit" });
+      execSync("npx rwsdk-tools tailwind", { stdio: "inherit" });
       console.log("✅ Tailwind installed successfully!");
     } else {
       console.log("✅ Tailwind is already installed.");
@@ -88,8 +88,8 @@ export function cn(...inputs: ClassValue[]) {
       const stylesDir = path.join(process.cwd(), 'src', 'app');
       const stylesPath = path.join(stylesDir, 'styles.css');
       
-      const stylesContent = `@import "tailwindcss";
-@import "tw-animate-css";
+      // Define the ShadCN styles content
+      const shadcnStyles = `@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -211,9 +211,58 @@ export function cn(...inputs: ClassValue[]) {
     @apply bg-background text-foreground;
   }
 }`;
+
+      // Check if the directory exists, create it if not
+      if (!fs.existsSync(stylesDir)) {
+        fs.mkdirSync(stylesDir, { recursive: true });
+      }
       
-      await writeFile(stylesPath, stylesContent);
-      console.log('✅ Created styles.css with shadcn styles');
+      let finalStylesContent = '';
+      
+      // Check if the styles.css file already exists
+      if (fs.existsSync(stylesPath)) {
+        // Read the existing content
+        const existingContent = await readFile(stylesPath, 'utf8');
+        
+        // Check if the file already has the tailwind import
+        if (existingContent.includes('@import "tailwindcss"')) {
+          // Check if it already has the shadcn styles
+          if (existingContent.includes('@custom-variant dark (&:is(.dark *))') || 
+              existingContent.includes('--sidebar-ring: oklch(0.708 0 0)')) {
+            console.log('✅ ShadCN styles already exist in styles.css');
+            finalStylesContent = existingContent;
+          } else {
+            // Insert the shadcn styles after the tailwind import
+            const tailwindImportIndex = existingContent.indexOf('@import "tailwindcss"');
+            const endOfLineIndex = existingContent.indexOf('\n', tailwindImportIndex);
+            
+            if (endOfLineIndex !== -1) {
+              // Insert after the line with tailwind import
+              finalStylesContent = 
+                existingContent.substring(0, endOfLineIndex + 1) + 
+                shadcnStyles + 
+                existingContent.substring(endOfLineIndex + 1);
+              console.log('✅ Added ShadCN styles after Tailwind import in existing styles.css');
+            } else {
+              // If we can't find the end of the line, append to the end
+              finalStylesContent = existingContent + '\n' + shadcnStyles;
+              console.log('✅ Appended ShadCN styles to existing styles.css');
+            }
+          }
+        } else {
+          // No tailwind import found, add it along with shadcn styles
+          finalStylesContent = '@import "tailwindcss";\n' + shadcnStyles + '\n\n' + existingContent;
+          console.log('✅ Added Tailwind import and ShadCN styles to existing styles.css');
+        }
+      } else {
+        // File doesn't exist, create it with tailwind import and shadcn styles
+        finalStylesContent = '@import "tailwindcss";\n' + shadcnStyles;
+        console.log('✅ Created new styles.css file with Tailwind import and ShadCN styles');
+      }
+      
+      // Write the final content to the file
+      await writeFile(stylesPath, finalStylesContent);
+      console.log('✅ Updated styles.css successfully');
       
       // Update Document.tsx to include the styles
       console.log('📝 Updating Document.tsx...');

@@ -1,10 +1,10 @@
 {
-  "name": "graftthis",
+  "name": "rwsdk-tools",
   "version": "0.2.0",
   "description": "A collection of utility tools for working with the RWSDK (Redwood SDK)",
   "main": "install.js",
   "bin": {
-    "graftthis": "./install.js"
+    "rwsdk-tools": "./install.js"
   },
   "scripts": {
     "start": "node install.js"
@@ -19,6 +19,5 @@
   "engines": {
     "node": ">=14.0.0"
   },
-  "dependencies": {},
   "packageManager": "pnpm@10.6.3+sha512.bb45e34d50a9a76e858a95837301bfb6bd6d35aea2c5d52094fa497a467c43f5c440103ce2511e9e0a2f89c3d6071baac3358fc68ac6fb75e2ceb3d2736065e6"
 }

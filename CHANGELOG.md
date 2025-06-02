@@ -7,16 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-06-02
 
+### Added
+- Added colored output to the CLI for improved readability and user experience
+- Implemented color-coding: green for success messages, cyan for process messages, yellow for warnings, and red for errors
+- Added bold formatting for important headings like "Next steps" and "Usage"
+- Enhanced route generator to support external route files with multiple import patterns:
+  - Direct variable references in prefix calls: `prefix("/user", userRoutes)`
+  - Spread syntax for route arrays: `...userRoutes`
+  - Improved path resolution for imported route files
+
 ### Changed
 - Updated ShadCN setup tool to be compatible with the latest version of RedwoodSDK
 - Removed unnecessary configuration for tsconfig.json and vite.config.mts files
 - Streamlined the setup process for ShadCN UI integration
 - Fixed Tailwind setup tool to preserve existing styles.css content instead of overwriting it
+- Enhanced ShadCN setup to intelligently inject styles into existing styles.css files rather than overwriting them
 
 ## [0.3.0] - 2025-05-20
 
 ### Added
-- Added Seed to SQL converter tool (`npx graftthis seedtosql`)
+- Added Seed to SQL converter tool (`npx rwsdk-tools seedtosql`)
 - Created a dependency-free script that converts Redwood seed files to raw SQL
 - Added support for various Prisma operations including `createMany`, `create`, and `$executeRawUnsafe`
 - Implemented handling for nested relations and complex data structures
@@ -25,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-05-15
 
 ### Added
-- Added shadcn UI setup tool (`npx graftthis shadcn`)
+- Added shadcn UI setup tool (`npx rwsdk-tools shadcn`)
 - Created a pre-configured components.json file for RedwoodSDK projects
 - Added utilities to automatically install shadcn dependencies
 - Implemented proper Document.tsx file updates for style imports
@@ -40,8 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Initial CLI framework for installing utility tools in RedwoodSDK projects
-- Added routes generator tool (`npx graftthis routes`)
-- Added component generator tool with Plop integration (`npx graftthis component`)
-- Added Tailwind CSS setup tool (`npx graftthis tailwind`)
+- Added routes generator tool (`npx rwsdk-tools routes`)
+- Added component generator tool with Plop integration (`npx rwsdk-tools component`)
+- Added Tailwind CSS setup tool (`npx rwsdk-tools tailwind`)
 - Implemented automatic dependency installation
 - Created comprehensive documentation for all tools

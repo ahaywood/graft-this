@@ -12,6 +12,7 @@ interface RouteMatch {
 interface ImportInfo {
   originalName?: string;
   path: string;
+  isRouteFile?: boolean;
 }
 
 async function findMatchingBracket(content: string, startIndex: number): Promise<number> {
@@ -27,9 +28,41 @@ async function findMatchingBracket(content: string, startIndex: number): Promise
   return i - 1;
 }
 
-async function findImportedRoutes(content: string): Promise<string[]> {
+async function resolveImportPath(importPath: string, currentFilePath?: string): Promise<string> {
+  // Convert relative path to absolute
+  let absolutePath = importPath;
+  if (importPath.startsWith('@/')) {
+    absolutePath = path.join(process.cwd(), 'src', importPath.slice(2));
+  } else if (importPath.startsWith('./') || importPath.startsWith('../')) {
+    const basePath = currentFilePath ? path.dirname(currentFilePath) : process.cwd();
+    absolutePath = path.join(basePath, importPath);
+  }
+
+  // Try different extensions if no extension is provided
+  if (!absolutePath.endsWith('.ts') && !absolutePath.endsWith('.tsx')) {
+    // Try .ts extension first
+    try {
+      await fs.access(absolutePath + '.ts');
+      return absolutePath + '.ts';
+    } catch (error) {
+      // Try .tsx extension
+      try {
+        await fs.access(absolutePath + '.tsx');
+        return absolutePath + '.tsx';
+      } catch (error) {
+        // If both fail, return the original path with .ts extension
+        return absolutePath + '.ts';
+      }
+    }
+  }
+
+  return absolutePath;
+}
+
+async function findImportedRoutes(content: string, filePath?: string): Promise<string[]> {
   const importRegex = /import\s*{\s*([^}]+)\s*}\s*from\s*["']([^"']+)["']/g;
-  const spreadRegex = /\[\s*\.\.\.(\w+)\s*\]/g;
+  const spreadRegex = /\.\.\.([\w]+)\s*,?/g;
+  const prefixVarRegex = /prefix\(\s*["']([^"']+)["']\s*,\s*([\w]+)\s*\)/g;
   const importedRoutes: string[] = [];
   let match;
 
@@ -49,26 +82,37 @@ async function findImportedRoutes(content: string): Promise<string[]> {
     }
   }
 
-  // Find spread operators and process imported files
+  // Process spread operators (both inside arrays and directly in the render function)
   while ((match = spreadRegex.exec(content)) !== null) {
     const variableName = match[1];
     const importInfo = imports.get(variableName);
 
     if (importInfo) {
-      // Convert relative path to absolute
-      let absolutePath = importInfo.path;
-      if (importInfo.path.startsWith('@/')) {
-        absolutePath = path.join(process.cwd(), 'src', importInfo.path.slice(2));
-      } else if (importInfo.path.startsWith('./') || importInfo.path.startsWith('../')) {
-        absolutePath = path.join(path.dirname(process.cwd()), importInfo.path);
-      }
-
       try {
-        const importedContent = await fs.readFile(absolutePath + '.ts', 'utf-8');
-        const newRoutes = await extractRoutesFromContent(importedContent);
+        const absolutePath = await resolveImportPath(importInfo.path, filePath);
+        const importedContent = await fs.readFile(absolutePath, 'utf-8');
+        const newRoutes = await extractRoutesFromContent(importedContent, '', absolutePath);
         importedRoutes.push(...newRoutes);
       } catch (error) {
-        console.warn(`Warning: Could not process imported routes from ${importInfo.path}`);
+        console.warn(`Warning: Could not process imported routes from ${importInfo.path}:`, error);
+      }
+    }
+  }
+
+  // Process prefix with variable references (e.g., prefix("/user", userRoutes))
+  while ((match = prefixVarRegex.exec(content)) !== null) {
+    const prefixPath = match[1];
+    const variableName = match[2];
+    const importInfo = imports.get(variableName);
+
+    if (importInfo) {
+      try {
+        const absolutePath = await resolveImportPath(importInfo.path, filePath);
+        const importedContent = await fs.readFile(absolutePath, 'utf-8');
+        const newRoutes = await extractRoutesFromContent(importedContent, prefixPath, absolutePath);
+        importedRoutes.push(...newRoutes);
+      } catch (error) {
+        console.warn(`Warning: Could not process imported routes from ${importInfo.path} with prefix ${prefixPath}:`, error);
       }
     }
   }
@@ -76,7 +120,7 @@ async function findImportedRoutes(content: string): Promise<string[]> {
   return importedRoutes;
 }
 
-async function extractRoutesFromContent(content: string, prefix = ''): Promise<string[]> {
+async function extractRoutesFromContent(content: string, prefix = '', filePath?: string): Promise<string[]> {
   const routes: string[] = [];
   const routeRegex = /route\("([^"]+)"/g;
   const indexRegex = /index\(/g;
@@ -85,7 +129,7 @@ async function extractRoutesFromContent(content: string, prefix = ''): Promise<s
   let match;
 
   // Process imported routes first
-  const importedRoutes = await findImportedRoutes(content);
+  const importedRoutes = await findImportedRoutes(content, filePath);
   routes.push(...importedRoutes);
 
   // Find all prefixed route blocks
@@ -98,7 +142,8 @@ async function extractRoutesFromContent(content: string, prefix = ''): Promise<s
     // Recursively process nested routes with combined prefix
     const nestedRoutes = await extractRoutesFromContent(
       nestedContent,
-      prefix + prefixPath
+      prefix + prefixPath,
+      filePath
     );
     routes.push(...nestedRoutes);
   }
@@ -126,7 +171,7 @@ async function extractRoutesFromContent(content: string, prefix = ''): Promise<s
 }
 
 async function generateLinksFile(routes: string[]) {
-  const content = `import { defineLinks } from "@redwoodjs/sdk/router";
+  const content = `import { defineLinks } from "rwsdk/router";
 
 export const link = defineLinks(${JSON.stringify(routes, null, 2)});
 `;
@@ -140,12 +185,10 @@ export const link = defineLinks(${JSON.stringify(routes, null, 2)});
 
 async function main() {
   try {
-    const workerContent = await fs.readFile(
-      path.resolve(process.cwd(), 'src/worker.tsx'),
-      'utf-8'
-    );
+    const workerPath = path.resolve(process.cwd(), 'src/worker.tsx');
+    const workerContent = await fs.readFile(workerPath, 'utf-8');
 
-    const routes = await extractRoutesFromContent(workerContent);
+    const routes = await extractRoutesFromContent(workerContent, '', workerPath);
     await generateLinksFile(routes);
     console.log('✨ Successfully generated links.ts');
   } catch (error) {

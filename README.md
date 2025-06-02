@@ -5,7 +5,7 @@ A command-line tool for installing utility tools that work with the RWSDK (Redwo
 ## Installation
 
 ```bash
-npm install -g graftthis
+npm install -g rwsdk-tools
 # or for local development
 npm link
 ```
@@ -16,16 +16,16 @@ Run the command-line tool to install utilities:
 
 ```bash
 # Install all available tools
-npx graftthis
+npx rwsdk-tools
 
 # Install specific tools
-npx graftthis routes
-npx graftthis component
-npx graftthis tailwind
-npx graftthis seedtosql
+npx rwsdk-tools routes
+npx rwsdk-tools component
+npx rwsdk-tools tailwind
+npx rwsdk-tools seedtosql
 
 # Show help
-npx graftthis help
+npx rwsdk-tools help
 ```
 
 ## How It Works
@@ -43,7 +43,7 @@ This package provides a simple command-line interface to install utility tools f
 The `generateRoutes` tool helps generate routes for your RWSDK project.
 
 ```bash
-npx graftthis routes
+npx rwsdk-tools routes
 ```
 
 This command:
@@ -62,7 +62,7 @@ npm run routes
 The `component` tool helps generate and restructure React components for your RWSDK project using Plop.
 
 ```bash
-npx graftthis component
+npx rwsdk-tools component
 ```
 
 This command:
@@ -94,7 +94,7 @@ npm run restructure-all
 The `tailwind` tool sets up Tailwind CSS for your RWSDK project.
 
 ```bash
-npx graftthis tailwind
+npx rwsdk-tools tailwind
 ```
 
 This command:
@@ -120,7 +120,7 @@ pnpm install tailwindcss @tailwindcss/vite
 The `shadcn` tool sets up shadcn UI components for your RWSDK project.
 
 ```bash
-npx graftthis shadcn
+npx rwsdk-tools shadcn
 ```
 
 This command:
@@ -150,7 +150,7 @@ After installation, you can add shadcn components to your project by installing 
 The `seedToSql` tool converts Redwood.js seed files to raw SQL statements that can be executed directly against your database.
 
 ```bash
-npx graftthis seedtosql
+npx rwsdk-tools seedtosql
 ```
 
 This command:

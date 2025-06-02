@@ -1,7 +1,7 @@
 1. Check to see if tailwind has already been installed on the project. (It would have installed the packages `tailwindcss @tailwindcss/vite`). If not, run the command to install Tailwind for me.
 
 ```
-npx graftthis tailwind
+npx rwsdk-tools tailwind
 ```
 
 2. Install shadcn cli. If the shadcn package is not installed, run the command for me.
