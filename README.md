@@ -156,15 +156,18 @@ npx rwsdk-tools seedtosql
 
 This command:
 
-1. Copies the `seedToSql.mjs` script to your project's `scripts` directory
+1. Copies the `seedToSql.mjs` script to your project's `src/scripts` directory
 2. Makes the script executable
-3. Adds a `seedtosql` script to your project's package.json file that runs: `node scripts/seedToSql.mjs`
+3. Adds a `seedtosql` script to your project's package.json file that runs: `node src/scripts/seedToSql.mjs`
 
 After installation, you can convert seed files to SQL by running:
 
 ```bash
+# Convert the default seed file (or specify a custom one)
+pnpm run seedtosql
+
 # Convert a specific seed file
-npm run seedtosql -- --input <path-to-seed-file> [--output <path-to-output-sql>]
+pnpm run seedtosql -- --input <path-to-seed-file> [--output <path-to-output-sql>]
 ```
 
 Features:

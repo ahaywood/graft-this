@@ -135,7 +135,7 @@ function installGenerateRoutesTool() {
     );
 
     console.log("\x1b[32m✓ generateRoutes tool installed successfully!\x1b[0m");
-    console.log("\n\n\x1b[1mNext steps:\x1b[0m");
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
     console.log("  pnpm routes\n\n");
   } catch (error) {
     console.error(
@@ -298,7 +298,7 @@ function installComponentGeneratorTool() {
     console.log(
       "\x1b[32m\u2713 Component generator tool installed successfully!\x1b[0m"
     );
-    console.log("\n\nNext steps:");
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
     console.log("  pnpm run component\n\n");
   } catch (error) {
     console.error(
@@ -598,11 +598,11 @@ function installSeedToSqlTool() {
   console.log("\x1b[36mInstalling Seed to SQL converter tool...\x1b[0m");
 
   try {
-    // Create scripts directory if it doesn't exist
-    const scriptsDir = path.join(targetPath, "scripts");
+    // Create src/scripts directory if it doesn't exist
+    const scriptsDir = path.join(targetPath, "src", "scripts");
     fs.mkdirSync(scriptsDir, { recursive: true });
 
-    // Copy seedToSql.mjs to scripts directory
+    // Copy seedToSql.mjs to src/scripts directory
     const sourcePath = path.join(toolPath, "seedToSql.mjs");
     const destPath = path.join(scriptsDir, "seedToSql.mjs");
 
@@ -630,16 +630,14 @@ function installSeedToSqlTool() {
     addScriptToPackageJson(
       targetPath,
       "seedtosql",
-      "node scripts/seedToSql.mjs"
+      "node src/scripts/seedToSql.mjs"
     );
 
     console.log(
       "\x1b[32m\u2713 Seed to SQL converter tool installed successfully!\x1b[0m"
     );
-    console.log("\nUsage:");
-    console.log(
-      "  npm run seedtosql -- --input <path-to-seed-file> [--output <path-to-output-sql>]"
-    );
+    console.log("\n\n👉 \x1b[1mNext Steps:\x1b[0m");
+    console.log("  pnpm run seedtosql\n\n");
   } catch (error) {
     console.error(
       `\x1b[31mError installing Seed to SQL converter tool: ${error.message}\x1b[0m`
@@ -687,7 +685,7 @@ function installMergePrismaTool() {
     console.log(
       "\n\x1b[32mPrisma schema merger tool installed successfully!\x1b[0m"
     );
-    console.log("\n\nNext steps:");
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
     console.log("  pnpm merge\n\n");
   } catch (error) {
     console.error(

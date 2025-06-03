@@ -57,37 +57,40 @@ async function setupShadcn() {
     }
 
     // Step 2: Manually set up shadcn (without using the CLI init command)
-    console.log('📋 Setting up shadcn manually...');
-    
+    console.log("📋 Setting up shadcn manually...");
+
     try {
       // Install necessary dependencies for shadcn
-      console.log('💾 Installing shadcn dependencies...');
-      execSync('pnpm add class-variance-authority clsx tailwind-merge lucide-react @radix-ui/react-slot tw-animate-css', { stdio: 'inherit' });
-      
+      console.log("💾 Installing shadcn dependencies...");
+      execSync(
+        "pnpm add class-variance-authority clsx tailwind-merge lucide-react @radix-ui/react-slot tw-animate-css",
+        { stdio: "inherit" }
+      );
+
       // Create the lib directory and utils.ts file
-      console.log('📂 Creating lib directory and utility files...');
-      const libDir = path.join(process.cwd(), 'src', 'app', 'lib');
+      console.log("📂 Creating lib directory and utility files...");
+      const libDir = path.join(process.cwd(), "src", "app", "lib");
       if (!fs.existsSync(libDir)) {
         fs.mkdirSync(libDir, { recursive: true });
       }
-      
+
       // Create the cn.ts utility file
-      const cnUtilPath = path.join(libDir, 'utils.ts');
+      const cnUtilPath = path.join(libDir, "utils.ts");
       const cnUtilContent = `import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }`;
-      
+
       await writeFile(cnUtilPath, cnUtilContent);
-      console.log('✅ Created utils.ts with cn helper function');
-      
+      console.log("✅ Created utils.ts with cn helper function");
+
       // Set up the CSS file
-      console.log('📝 Setting up styles.css...');
-      const stylesDir = path.join(process.cwd(), 'src', 'app');
-      const stylesPath = path.join(stylesDir, 'styles.css');
-      
+      console.log("📝 Setting up styles.css...");
+      const stylesDir = path.join(process.cwd(), "src", "app");
+      const stylesPath = path.join(stylesDir, "styles.css");
+
       // Define the ShadCN styles content
       const shadcnStyles = `@import "tw-animate-css";
 
@@ -216,120 +219,152 @@ export function cn(...inputs: ClassValue[]) {
       if (!fs.existsSync(stylesDir)) {
         fs.mkdirSync(stylesDir, { recursive: true });
       }
-      
-      let finalStylesContent = '';
-      
+
+      let finalStylesContent = "";
+
       // Check if the styles.css file already exists
       if (fs.existsSync(stylesPath)) {
         // Read the existing content
-        const existingContent = await readFile(stylesPath, 'utf8');
-        
+        const existingContent = await readFile(stylesPath, "utf8");
+
         // Check if the file already has the tailwind import
         if (existingContent.includes('@import "tailwindcss"')) {
           // Check if it already has the shadcn styles
-          if (existingContent.includes('@custom-variant dark (&:is(.dark *))') || 
-              existingContent.includes('--sidebar-ring: oklch(0.708 0 0)')) {
-            console.log('✅ ShadCN styles already exist in styles.css');
+          if (
+            existingContent.includes("@custom-variant dark (&:is(.dark *))") ||
+            existingContent.includes("--sidebar-ring: oklch(0.708 0 0)")
+          ) {
+            console.log("✅ ShadCN styles already exist in styles.css");
             finalStylesContent = existingContent;
           } else {
             // Insert the shadcn styles after the tailwind import
-            const tailwindImportIndex = existingContent.indexOf('@import "tailwindcss"');
-            const endOfLineIndex = existingContent.indexOf('\n', tailwindImportIndex);
-            
+            const tailwindImportIndex = existingContent.indexOf(
+              '@import "tailwindcss"'
+            );
+            const endOfLineIndex = existingContent.indexOf(
+              "\n",
+              tailwindImportIndex
+            );
+
             if (endOfLineIndex !== -1) {
               // Insert after the line with tailwind import
-              finalStylesContent = 
-                existingContent.substring(0, endOfLineIndex + 1) + 
-                shadcnStyles + 
+              finalStylesContent =
+                existingContent.substring(0, endOfLineIndex + 1) +
+                shadcnStyles +
                 existingContent.substring(endOfLineIndex + 1);
-              console.log('✅ Added ShadCN styles after Tailwind import in existing styles.css');
+              console.log(
+                "✅ Added ShadCN styles after Tailwind import in existing styles.css"
+              );
             } else {
               // If we can't find the end of the line, append to the end
-              finalStylesContent = existingContent + '\n' + shadcnStyles;
-              console.log('✅ Appended ShadCN styles to existing styles.css');
+              finalStylesContent = existingContent + "\n" + shadcnStyles;
+              console.log("✅ Appended ShadCN styles to existing styles.css");
             }
           }
         } else {
           // No tailwind import found, add it along with shadcn styles
-          finalStylesContent = '@import "tailwindcss";\n' + shadcnStyles + '\n\n' + existingContent;
-          console.log('✅ Added Tailwind import and ShadCN styles to existing styles.css');
+          finalStylesContent =
+            '@import "tailwindcss";\n' +
+            shadcnStyles +
+            "\n\n" +
+            existingContent;
+          console.log(
+            "✅ Added Tailwind import and ShadCN styles to existing styles.css"
+          );
         }
       } else {
         // File doesn't exist, create it with tailwind import and shadcn styles
         finalStylesContent = '@import "tailwindcss";\n' + shadcnStyles;
-        console.log('✅ Created new styles.css file with Tailwind import and ShadCN styles');
+        console.log(
+          "✅ Created new styles.css file with Tailwind import and ShadCN styles"
+        );
       }
-      
+
       // Write the final content to the file
       await writeFile(stylesPath, finalStylesContent);
-      console.log('✅ Updated styles.css successfully');
-      
+      console.log("✅ Updated styles.css successfully");
+
       // Update Document.tsx to include the styles
-      console.log('📝 Updating Document.tsx...');
-      const documentPath = path.join(process.cwd(), 'src', 'app', 'Document.tsx');
-      
+      console.log("📝 Updating Document.tsx...");
+      const documentPath = path.join(
+        process.cwd(),
+        "src",
+        "app",
+        "Document.tsx"
+      );
+
       if (fs.existsSync(documentPath)) {
         try {
-          let documentContent = await readFile(documentPath, 'utf8');
+          let documentContent = await readFile(documentPath, "utf8");
           let modified = false;
-          
+
           // Check if styles are already imported
-          if (!documentContent.includes("import styles from './styles.css?url'")) {
+          if (
+            !documentContent.includes("import styles from './styles.css?url'")
+          ) {
             // Always add the import statement at the very top of the file, regardless of content
             documentContent = `import styles from './styles.css?url';\n\n${documentContent}`;
-            console.log('✅ Added styles import to Document.tsx');
+            console.log("✅ Added styles import to Document.tsx");
             modified = true;
           } else {
-            console.log('✅ Styles import already exists in Document.tsx');
+            console.log("✅ Styles import already exists in Document.tsx");
           }
-          
+
           // Check if the link tag is already in the head
-          if (!documentContent.includes('<link rel="stylesheet" href={styles}')) {
+          if (
+            !documentContent.includes('<link rel="stylesheet" href={styles}')
+          ) {
             // Add the link tag to the head
-            if (documentContent.includes('<head>')) {
+            if (documentContent.includes("<head>")) {
               documentContent = documentContent.replace(
                 /<head>(\s*)/,
                 '<head>$1<link rel="stylesheet" href={styles} />$1'
               );
-              console.log('✅ Added stylesheet link to Document.tsx');
+              console.log("✅ Added stylesheet link to Document.tsx");
               modified = true;
             } else {
-              console.log('⚠️ Could not find <head> tag in Document.tsx');
+              console.log("⚠️ Could not find <head> tag in Document.tsx");
             }
           } else {
-            console.log('✅ Stylesheet link already exists in Document.tsx');
+            console.log("✅ Stylesheet link already exists in Document.tsx");
           }
-          
+
           // Write the updated Document.tsx file only if changes were made
           if (modified) {
             await writeFile(documentPath, documentContent);
-            console.log('✅ Successfully updated Document.tsx');
+            console.log("✅ Successfully updated Document.tsx");
           } else {
-            console.log('ℹ️ No changes needed for Document.tsx');
+            console.log("ℹ️ No changes needed for Document.tsx");
           }
-          
+
           // Double-check that the import statement was added
-          const updatedContent = await readFile(documentPath, 'utf8');
-          if (!updatedContent.includes("import styles from './styles.css?url'")) {
-            console.log('⚠️ Warning: Import statement was not added to Document.tsx. Trying alternative method...');
-            
+          const updatedContent = await readFile(documentPath, "utf8");
+          if (
+            !updatedContent.includes("import styles from './styles.css?url'")
+          ) {
+            console.log(
+              "⚠️ Warning: Import statement was not added to Document.tsx. Trying alternative method..."
+            );
+
             // Try a more direct approach
-            const lines = updatedContent.split('\n');
+            const lines = updatedContent.split("\n");
             lines.unshift(`import styles from './styles.css?url';`);
-            await writeFile(documentPath, lines.join('\n'));
-            console.log('✅ Added styles import using alternative method');
+            await writeFile(documentPath, lines.join("\n"));
+            console.log("✅ Added styles import using alternative method");
           }
         } catch (error) {
-          console.error('❌ Error updating Document.tsx:', error.message);
+          console.error("❌ Error updating Document.tsx:", error.message);
         }
       } else {
-        console.error('❌ Document.tsx not found at', documentPath);
+        console.error("❌ Document.tsx not found at", documentPath);
       }
-      
-      console.log('✅ shadcn manual setup completed successfully!');
+
+      console.log("✅ shadcn manual setup completed successfully!");
     } catch (error) {
-      console.error('❌ Error setting up shadcn manually:', error.message);
-      console.log('⚠️ You may need to manually install dependencies: pnpm add class-variance-authority clsx tailwind-merge lucide-react @radix-ui/react-slot tw-animate-css');
+      console.error("❌ Error setting up shadcn manually:", error.message);
+      console.log(
+        "⚠️ You may need to manually install dependencies: pnpm add class-variance-authority clsx tailwind-merge lucide-react @radix-ui/react-slot tw-animate-css"
+      );
     }
 
     // Step 3: Display success message and next steps
