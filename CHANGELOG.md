@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added support for `--file` and `--folder` structure flags
   - Added support for `--stories`, `--no-stories`, `--tests`, and `--no-tests` flags
   - Improved flag parsing to properly bypass interactive prompts when flags are provided
+- Enhanced seedToSql tool with improved compatibility and error handling:
+  - Added enhanced regex patterns to better match different seed file formats
+  - Added fallback parsing methods for complex data structures
+  - Added deduplication function to remove duplicate SQL statements
+  - Added support for seed files using the latest RedwoodSDK imports
+  - Fixed handling of `db.user.create()` operations
+  - Fixed handling of DELETE statements in User table
+  - Improved error handling to suppress unnecessary warnings
+  - Improved console output to be more user-friendly
 
 ### Changed
 - Updated ShadCN setup tool to be compatible with the latest version of RedwoodSDK

@@ -1,8 +1,9 @@
-import { defineScript } from "@redwoodjs/sdk/worker";
+import { defineScript } from "rwsdk/worker";
 import { db, setupDb } from "@/db";
+import { env } from "cloudflare:workers";
 
-export default defineScript(async ({ env }) => {
-  setupDb(env);
+export default defineScript(async () => {
+  await setupDb(env);
 
   const createApplication = async () => {
     await db.application.create({

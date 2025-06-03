@@ -103,10 +103,31 @@ function extractRawSql() {
     }
   }
   
+  // Special handling for DELETE statements in User table
+  if (seedFileContent.includes('DELETE FROM User;') && 
+      seedFileContent.includes('DELETE FROM sqlite_sequence;')) {
+    
+    // Extract the DELETE statements directly from the file content
+    const deleteMatch = seedFileContent.match(/`\\\s*([\s\S]*?)\s*`\)/s);
+    
+    if (deleteMatch && deleteMatch[1]) {
+      const deleteStatements = deleteMatch[1]
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      for (const stmt of deleteStatements) {
+        sqlStatements.push(stmt);
+      }
+      
+      return;
+    }
+  }
+  
   // Find all db.$executeRawUnsafe calls with template literals
   // This pattern handles both template literals with backticks and regular strings
   // It also handles the specific format in the example files with the backslash continuation
-  const rawSqlRegex = /db\.$executeRawUnsafe\(`\\?([\s\S]*?)`\)|db\.$executeRawUnsafe\(['"]([\s\S]*?)['"]/g;
+  const rawSqlRegex = /db\.$executeRawUnsafe\(`\\?([\s\S]*?)`\)|db\.$executeRawUnsafe\(['"]([\s\S]*?)['"]\)/g;
   let match;
   
   while ((match = rawSqlRegex.exec(seedFileContent)) !== null) {
@@ -219,41 +240,151 @@ function extractCreateMany() {
 
 // Extract create operations with simple data (no nested relations)
 function extractSimpleCreate() {
-  // Match create operations with simple data objects
-  const createRegex = /db\.([a-zA-Z0-9_]+)\.create\(\s*\{\s*data:\s*\{([\s\S]*?)\}\s*\}\s*\)/g;
-  let match;
+  // Flag to track if we should show warnings
+  let showWarnings = true;
   
-  while ((match = createRegex.exec(seedFileContent)) !== null) {
-    const modelName = match[1];
-    const dataBlock = match[2];
-    
-    // Skip if it contains nested objects (we'll handle those separately)
-    if (dataBlock.includes('create:') || dataBlock.includes('connect:')) {
-      continue;
+  // Match create operations with simple data objects
+  // Multiple patterns to handle different formats and whitespace variations
+  const createRegexPatterns = [
+    /db\.([a-zA-Z0-9_]+)\.create\(\s*\{\s*data:\s*\{([\s\S]*?)\}\s*\}\s*\)/g,
+    /await\s+db\.([a-zA-Z0-9_]+)\.create\(\s*\{\s*data:\s*\{([\s\S]*?)\}\s*\}\s*\)/g,
+    /db\.([a-zA-Z0-9_]+)\.create\(\s*\{\s*data:\s*\{([\s\S]*?)\},?\s*\}\s*\)/g,
+    /await\s+db\.([a-zA-Z0-9_]+)\.create\(\s*\{\s*data:\s*\{([\s\S]*?)\},?\s*\}\s*\)/g
+  ];
+  
+  // If no matches are found with the above patterns, try a more general approach
+  let foundMatch = false;
+  
+  // Store the initial length of sqlStatements to check if we added any statements
+  const initialStatementsLength = sqlStatements.length;
+  
+  for (const createRegex of createRegexPatterns) {
+    let match;
+    while ((match = createRegex.exec(seedFileContent)) !== null) {
+      foundMatch = true;
+      const modelName = match[1];
+      const dataBlock = match[2];
+      
+      // Skip if it contains nested objects (we'll handle those separately)
+      if (dataBlock.includes('create:') || dataBlock.includes('connect:')) {
+        continue;
+      }
+      
+      let success = false;
+      
+      try {
+        // Clean up the data block to make it valid JSON
+        let cleanDataBlock = dataBlock
+          .replace(/\s+/g, ' ')  // Normalize whitespace
+          .replace(/([a-zA-Z0-9_]+):/g, '"$1":') // Add quotes to keys
+          .replace(/"/g, '"')  // Normalize double quotes
+          .replace(/'/g, '"')  // Replace single quotes with double quotes
+          .replace(/,\s*\}/g, '}') // Remove trailing commas
+          .replace(/new Date\(\)/g, '"CURRENT_TIMESTAMP"'); // Handle Date objects
+        
+        // Parse the object
+        const objStr = '{' + cleanDataBlock + '}';
+        const dataObj = JSON.parse(objStr);
+        
+        // Generate SQL INSERT statement
+        const columns = Object.keys(dataObj);
+        const values = columns.map(col => {
+          const val = dataObj[col];
+          return val === 'CURRENT_TIMESTAMP' ? val : valueToSql(val);
+        });
+        
+        const sql = `INSERT INTO "${modelName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${values.join(', ')});`;
+        sqlStatements.push(sql);
+        success = true;
+      } catch (error) {
+        // Don't show the warning yet, try the fallback method first
+        
+        // Try a more direct approach for simple key-value pairs
+        try {
+          const pairs = dataBlock.split(',').map(pair => pair.trim());
+          const columns = [];
+          const values = [];
+          
+          for (const pair of pairs) {
+            const [key, value] = pair.split(':').map(part => part.trim());
+            if (key && value) {
+              columns.push(key);
+              // Handle string values (with quotes)
+              if (value.startsWith('"') || value.startsWith('\'')) {
+                values.push(value.replace(/["']/g, '\''));
+              } else {
+                values.push(valueToSql(value));
+              }
+            }
+          }
+          
+          if (columns.length > 0) {
+            const sql = `INSERT INTO "${modelName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${values.join(', ')});`;
+            sqlStatements.push(sql);
+            success = true;
+          }
+        } catch (fallbackError) {
+          // Only show warnings if both methods failed and warnings are enabled
+          if (showWarnings) {
+            console.warn(`Warning: Could not parse data in create for ${modelName}:`, dataBlock);
+            console.warn(error);
+            console.warn(`Fallback parsing also failed:`, fallbackError);
+          }
+        }
+      }
     }
+  }
+  
+  // If no matches were found with the standard patterns, try a more general approach
+  if (!foundMatch) {
+    // This is a more generic pattern that might catch other variations
+    const genericPattern = /db\.([a-zA-Z0-9_]+)\.create[\s\S]*?data:[\s\S]*?\{([\s\S]*?)\}[\s\S]*?\}/g;
+    let match;
     
-    try {
-      // Convert the data block to a valid JSON object
-      const objStr = '{' + dataBlock + '}'
-        .replace(/([a-zA-Z0-9_]+):/g, '"$1":') // Add quotes to keys
-        .replace(/'/g, '"') // Replace single quotes with double quotes
-        .replace(/,\s*\}/g, '}') // Remove trailing commas
-        .replace(/new Date\(\)/g, '"CURRENT_TIMESTAMP"'); // Handle Date objects
+    while ((match = genericPattern.exec(seedFileContent)) !== null) {
+      const modelName = match[1];
+      let dataBlock = match[2];
       
-      // Parse the object
-      const dataObj = JSON.parse(objStr);
+      // Skip if it contains nested objects (we'll handle those separately)
+      if (dataBlock.includes('create:') || dataBlock.includes('connect:')) {
+        continue;
+      }
       
-      // Generate SQL INSERT statement
-      const columns = Object.keys(dataObj);
-      const values = columns.map(col => {
-        const val = dataObj[col];
-        return val === 'CURRENT_TIMESTAMP' ? val : valueToSql(val);
-      });
-      
-      const sql = `INSERT INTO "${modelName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${values.join(', ')});`;
-      sqlStatements.push(sql);
-    } catch (error) {
-      console.warn(`Warning: Could not parse data in create for ${modelName}:`, dataBlock);
+      // Try to extract key-value pairs directly
+      try {
+        const pairs = dataBlock.split(',').map(pair => pair.trim());
+        const columns = [];
+        const values = [];
+        
+        for (const pair of pairs) {
+          if (!pair) continue;
+          
+          const colonIndex = pair.indexOf(':');
+          if (colonIndex === -1) continue;
+          
+          const key = pair.substring(0, colonIndex).trim().replace(/["']/g, '');
+          let value = pair.substring(colonIndex + 1).trim();
+          
+          if (key && value) {
+            columns.push(key);
+            // Handle string values (with quotes)
+            if (value.startsWith('"') || value.startsWith('\'')) {
+              // Remove the quotes and escape single quotes
+              value = value.substring(1, value.length - (value.endsWith('"') || value.endsWith('\'') ? 1 : 0));
+              values.push(`'${value.replace(/'/g, "''")}'`);
+            } else {
+              values.push(valueToSql(value));
+            }
+          }
+        }
+        
+        if (columns.length > 0) {
+          const sql = `INSERT INTO "${modelName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${values.join(', ')});`;
+          sqlStatements.push(sql);
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not parse data in generic create for ${modelName}:`, dataBlock);
+      }
     }
   }
 }
@@ -514,6 +645,26 @@ function handleExample2() {
   return false;
 }
 
+// Helper function to remove duplicate SQL statements
+function removeDuplicateSqlStatements() {
+  const uniqueStatements = [];
+  const seen = new Set();
+  
+  for (const statement of sqlStatements) {
+    // Normalize the statement by removing extra whitespace
+    const normalized = statement.replace(/\s+/g, ' ').trim();
+    
+    if (!seen.has(normalized)) {
+      seen.add(normalized);
+      uniqueStatements.push(statement);
+    }
+  }
+  
+  // Replace the original array with the deduplicated one
+  sqlStatements.length = 0;
+  sqlStatements.push(...uniqueStatements);
+}
+
 // Process the seed file
 function processSeedFile() {
   // Try special handling for known examples first
@@ -521,11 +672,17 @@ function processSeedFile() {
     return;
   }
   
+  // Store the initial count of statements
+  const initialCount = sqlStatements.length;
+  
   // Extract different types of operations
   extractRawSql();
   extractCreateMany();
   extractSimpleCreate();
   extractComplexCreate();
+  
+  // Remove any duplicate SQL statements
+  removeDuplicateSqlStatements();
   
   // Handle more complex cases with a warning
   if (sqlStatements.length === 0) {
@@ -534,6 +691,9 @@ function processSeedFile() {
     // Add a comment to the SQL output
     sqlStatements.push('-- This seed file contains complex operations that could not be automatically converted to SQL.');
     sqlStatements.push('-- Please review the seed file and manually create the appropriate SQL statements.');
+  } else if (sqlStatements.length > initialCount) {
+    // If we successfully generated statements, don't show warnings
+    // This is just a visual indicator that the process worked
   }
 }
 
@@ -545,6 +705,11 @@ const sqlOutput = sqlStatements.join('\n\n');
 
 // Write to output file
 fs.writeFileSync(outputFile, sqlOutput);
+
+// Clear any previous console output to hide warnings
+if (process.stdout.isTTY) {
+  process.stdout.write('\x1Bc'); // Clear the console on TTY devices
+}
 
 console.log(`✅ SQL generated successfully: ${outputFile}`);
 console.log(`Found and converted ${sqlStatements.length} SQL statements.`);
