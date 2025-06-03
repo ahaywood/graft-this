@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Direct variable references in prefix calls: `prefix("/user", userRoutes)`
   - Spread syntax for route arrays: `...userRoutes`
   - Improved path resolution for imported route files
+- Fixed component generator to properly respect command-line flags, allowing non-interactive component creation:
+  - Added support for `--file` and `--folder` structure flags
+  - Added support for `--stories`, `--no-stories`, `--tests`, and `--no-tests` flags
+  - Improved flag parsing to properly bypass interactive prompts when flags are provided
 
 ### Changed
 - Updated ShadCN setup tool to be compatible with the latest version of RedwoodSDK

@@ -38,38 +38,169 @@ export default function (plop) {
       .replace("plopfile.mjs", `plop-templates/component/${templateName}`);
   });
 
+  // Parse command line arguments before prompts
+  const parseCommandLineArgs = () => {
+    const args = process.argv.slice(2);
+    const options = {};
+    
+    // Check for --file flag
+    if (args.includes('--file')) {
+      options.structure = 'file';
+      // If --file is specified, default to no stories and no tests
+      // unless explicitly overridden
+      if (!args.includes('--stories')) {
+        options.withStories = false;
+      }
+      if (!args.includes('--tests')) {
+        options.withTests = false;
+      }
+    } else if (args.includes('--folder')) {
+      options.structure = 'folder';
+    }
+    
+    // Check for stories flags
+    if (args.includes('--stories')) {
+      options.withStories = true;
+    } else if (args.includes('--no-stories')) {
+      options.withStories = false;
+    }
+    
+    // Check for tests flags
+    if (args.includes('--tests')) {
+      options.withTests = true;
+    } else if (args.includes('--no-tests')) {
+      options.withTests = false;
+    }
+    
+    return options;
+  };
+  
+  // Get command line arguments
+  const cmdArgs = parseCommandLineArgs();
+  
+  // Keep the action type for backward compatibility
+  plop.setActionType('parseArgs', function(answers, config) {
+    return 'Args parsed';
+  });
+
   // Create new component
   plop.setGenerator("component", {
-    description: "Create a new component with stories and tests",
+    description: "Create a new component with optional stories and tests",
     prompts: [
       {
         type: "input",
         name: "name",
         message: "Component name:",
+        validate: (value) => {
+          if (/.+/.test(value)) return true;
+          return "Component name is required";
+        }
       },
+      {
+        type: "list",
+        name: "structure",
+        message: "Component structure:",
+        choices: [
+          { name: "Folder structure (component in its own folder)", value: "folder" },
+          { name: "Single file (no folder)", value: "file" }
+        ],
+        default: "folder",
+        when: (answers) => {
+          // Skip if structure was set by command line args
+          return cmdArgs.structure === undefined;
+        }
+      },
+      {
+        type: "confirm",
+        name: "withStories",
+        message: "Generate Storybook file?",
+        default: true,
+        when: (answers) => {
+          // Skip if withStories was set by command line args
+          return cmdArgs.withStories === undefined;
+        }
+      },
+      {
+        type: "confirm",
+        name: "withTests",
+        message: "Generate test file?",
+        default: true,
+        when: (answers) => {
+          // Skip if withTests was set by command line args
+          return cmdArgs.withTests === undefined;
+        }
+      }
     ],
-    actions: [
-      {
-        type: "add",
-        path: "src/app/components/{{name}}/{{name}}.tsx",
-        templateFile: "plop-templates/component/component.hbs",
-      },
-      {
-        type: "add",
-        path: "src/app/components/{{name}}/{{name}}.stories.tsx",
-        templateFile: "plop-templates/component/stories.hbs",
-      },
-      {
-        type: "add",
-        path: "src/app/components/{{name}}/{{name}}.test.tsx",
-        templateFile: "plop-templates/component/test.hbs",
-      },
-      {
-        type: "add",
-        path: "src/app/components/{{name}}/index.ts",
-        templateFile: "plop-templates/component/index.hbs",
-      },
-    ],
+    // Apply command line arguments to the answers
+    skipPrompts: Object.keys(cmdArgs).length > 0,
+    skipActionsOnSkippedPrompts: false,
+    actions: function(data) {
+      // Apply command line arguments to the data
+      Object.assign(data, cmdArgs);
+      
+      const actions = [];
+      
+      if (data.structure === "folder") {
+        // Add component in folder
+        actions.push({
+          type: "add",
+          path: "src/app/components/{{name}}/{{name}}.tsx",
+          templateFile: "plop-templates/component/component.hbs",
+        });
+        
+        // Add index file for folder structure
+        actions.push({
+          type: "add",
+          path: "src/app/components/{{name}}/index.ts",
+          templateFile: "plop-templates/component/index.hbs",
+        });
+        
+        // Conditionally add stories
+        if (data.withStories) {
+          actions.push({
+            type: "add",
+            path: "src/app/components/{{name}}/{{name}}.stories.tsx",
+            templateFile: "plop-templates/component/stories.hbs",
+          });
+        }
+        
+        // Conditionally add tests
+        if (data.withTests) {
+          actions.push({
+            type: "add",
+            path: "src/app/components/{{name}}/{{name}}.test.tsx",
+            templateFile: "plop-templates/component/test.hbs",
+          });
+        }
+      } else {
+        // Add component as single file
+        actions.push({
+          type: "add",
+          path: "src/app/components/{{name}}.tsx",
+          templateFile: "plop-templates/component/component.hbs",
+        });
+        
+        // Conditionally add stories as single file
+        if (data.withStories) {
+          actions.push({
+            type: "add",
+            path: "src/app/components/{{name}}.stories.tsx",
+            templateFile: "plop-templates/component/stories.hbs",
+          });
+        }
+        
+        // Conditionally add tests as single file
+        if (data.withTests) {
+          actions.push({
+            type: "add",
+            path: "src/app/components/{{name}}.test.tsx",
+            templateFile: "plop-templates/component/test.hbs",
+          });
+        }
+      }
+      
+      return actions;
+    }
   });
 
   // Restructure existing component

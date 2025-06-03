@@ -23,7 +23,7 @@ Add the following commands to the `scripts` section of your `package.json` file:
 ## Available Commands
 
 ```bash
-# Create a new component
+# Create a new component (interactive prompts)
 pnpm component
 
 # Restructure a single component
@@ -32,6 +32,33 @@ pnpm restructure
 # Restructure all components in a directory
 pnpm restructure-all
 ```
+
+## Command-line Flags
+
+You can use flags to bypass the interactive prompts when creating components:
+
+```bash
+# Basic component with folder structure (interactive prompts)
+pnpm component MyComponent
+
+# Single file component with no stories or tests
+pnpm component MyComponent --file
+
+# Single file component with stories but no tests
+pnpm component MyComponent --file --stories
+
+# Folder structure with no stories or tests
+pnpm component MyComponent --folder --no-stories --no-tests
+```
+
+### Available Flags
+
+- `--file`: Create a single file component (no folder structure)
+- `--folder`: Create a component with folder structure (default)
+- `--stories`: Include Storybook stories file
+- `--no-stories`: Exclude Storybook stories file
+- `--tests`: Include test file
+- `--no-tests`: Exclude test file
 
 ## Component Structure
 

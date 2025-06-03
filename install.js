@@ -293,6 +293,8 @@ function installComponentGeneratorTool() {
     console.log(
       "\x1b[32m\u2713 Component generator tool installed successfully!\x1b[0m"
     );
+    console.log("\n\nNext steps:");
+    console.log("  pnpm run component\n\n");
   } catch (error) {
     console.error(
       `\x1b[31mError installing component generator tool: ${error.message}\x1b[0m`
