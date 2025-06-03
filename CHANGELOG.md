@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.2] - 2025-06-03
+## [0.5.0] - 2025-06-03
+
+### Added
+- Added email tool (`npx rwsdk-tools email`) for setting up email functionality with Resend
+- Implemented automatic installation of the Resend package
+- Added environment variable configuration for Resend API key
+- Created email client setup in src/app/lib/email.ts
+- Added optional integration with React Email for creating email templates
+- Added comprehensive documentation for the email tool
 
 ### Changed
 - Modified the seedToSql tool to place files in the `src/scripts` directory instead of the root `scripts` directory

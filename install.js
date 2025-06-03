@@ -54,6 +54,9 @@ function main() {
     case "merge":
       installMergePrismaTool();
       break;
+    case "email":
+      installEmailTool();
+      break;
     case "help":
       showHelp();
       break;
@@ -81,6 +84,7 @@ function showHelp() {
   );
   console.log("  npx rwsdk-tools seedtosql      Install Seed to SQL converter");
   console.log("  npx rwsdk-tools merge          Install Prisma schema merger");
+  console.log("  npx rwsdk-tools email          Set up email functionality with Resend");
   console.log("  npx rwsdk-tools help           Show this help message");
 }
 
@@ -97,6 +101,7 @@ function installAllTools() {
   installShadcnSetup();
   installSeedToSqlTool();
   installMergePrismaTool();
+  installEmailTool();
 
   console.log("\n\x1b[32mAll tools installed successfully!\x1b[0m");
 }
@@ -691,6 +696,29 @@ function installMergePrismaTool() {
     console.error(
       `Error installing Prisma schema merger tool: ${error.message}`
     );
+  }
+}
+
+/**
+ * Install the email tool and set up email functionality with Resend
+ */
+function installEmailTool() {
+  const toolPath = path.join(config.toolsDir, "email");
+  const emailScriptPath = path.join(toolPath, "index.js");
+
+  console.log("\x1b[36mSetting up email functionality...\x1b[0m");
+
+  try {
+    // Make sure the email script is executable
+    fs.chmodSync(emailScriptPath, '755');
+    
+    // Execute the email setup script
+    execSync(`node ${emailScriptPath}`, { stdio: 'inherit' });
+    
+    console.log("\x1b[32m✓ Email functionality set up successfully!\x1b[0m");
+  } catch (error) {
+    console.error(`\x1b[31mError setting up email functionality: ${error.message}\x1b[0m`);
+    process.exit(1);
   }
 }
 

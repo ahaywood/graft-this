@@ -24,6 +24,7 @@ npx rwsdk-tools component
 npx rwsdk-tools tailwind
 npx rwsdk-tools seedtosql
 npx rwsdk-tools merge
+npx rwsdk-tools email
 
 # Show help
 npx rwsdk-tools help
@@ -208,6 +209,43 @@ Features:
 - Handles generators, datasources, models, and enums
 - Supports commented model additions with special syntax
 - Sorts models alphabetically for better readability
+
+### email
+
+The `email` tool sets up email functionality for your RWSDK project using Resend.
+
+```bash
+npx rwsdk-tools email
+```
+
+This command:
+
+1. Installs the `resend` package using pnpm
+2. Adds a `RESEND_API` variable to your project's `.env` file
+3. Creates an `email.ts` file in the `src/app/lib` directory
+4. Asks if you want to install React Email for creating email templates
+
+After installation, you can use the Resend client in your application:
+
+```typescript
+import { resend } from 'src/app/lib/email';
+
+// Send an email
+await resend.emails.send({
+  from: 'onboarding@resend.dev',
+  to: 'user@example.com',
+  subject: 'Hello World',
+  html: '<p>Hello world!</p>',
+});
+```
+
+Features:
+
+- Seamless integration with Resend's email API
+- Environment variable setup for secure API key storage
+- Optional React Email integration for beautiful, responsive email templates
+- Works with Cloudflare Workers environment variables
+- Simple, clean API for sending emails from your application
 
 ## Requirements
 
