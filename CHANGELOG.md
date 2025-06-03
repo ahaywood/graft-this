@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added fallback parsing methods for complex data structures
   - Added deduplication function to remove duplicate SQL statements
   - Added support for seed files using the latest RedwoodSDK imports
+  - Added auto-detection of the default seed file (src/scripts/seed.ts) when no input file is specified
   - Fixed handling of `db.user.create()` operations
   - Fixed handling of DELETE statements in User table
   - Improved error handling to suppress unnecessary warnings

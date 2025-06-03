@@ -33,11 +33,26 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+// If no input file is specified, try to find the default seed file
 if (!inputFile) {
-  console.error('Error: No input file specified');
-  console.log('Usage: seedToSql --input <seed-file.ts> [--output <output-file.sql>]');
-  process.exit(1);
+  // Default seed file location in Redwood projects
+  const defaultSeedPath = 'src/scripts/seed.ts';
+  const possiblePath = path.resolve(process.cwd(), defaultSeedPath);
+  
+  if (fs.existsSync(possiblePath)) {
+    inputFile = defaultSeedPath;
+    console.log(`No input file specified, using default seed file: ${inputFile}`);
+  } else {
+    // If no input file found, exit with error
+    console.error('Error: No input file specified and default seed file not found');
+    console.log('Usage: seedToSql --input <seed-file.ts> [--output <output-file.sql>]');
+    console.log(`Default location checked: ${defaultSeedPath}`);
+    process.exit(1);
+  }
 }
+
+// Resolve relative paths for input file
+inputFile = path.resolve(process.cwd(), inputFile);
 
 // If no output file is specified, use the input filename with .sql extension
 if (!outputFile) {
@@ -45,8 +60,7 @@ if (!outputFile) {
   outputFile = path.join(parsedPath.dir, `${parsedPath.name}.sql`);
 }
 
-// Resolve relative paths
-inputFile = path.resolve(process.cwd(), inputFile);
+// Resolve relative paths for output file
 outputFile = path.resolve(process.cwd(), outputFile);
 
 // Check if input file exists

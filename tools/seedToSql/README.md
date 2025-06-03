@@ -16,18 +16,29 @@ This tool converts Redwood.js seed files to raw SQL statements. It parses Prisma
 ## Usage
 
 ```bash
-node seedToSql.mjs --input <path-to-seed-file> [--output <path-to-output-sql>]
+node seedToSql.mjs [--input <path-to-seed-file>] [--output <path-to-output-sql>]
 ```
 
 ### Options
 
-- `--input`, `-i`: Path to the seed file (required)
+- `--input`, `-i`: Path to the seed file (optional, will auto-detect if not specified)
 - `--output`, `-o`: Path to the output SQL file (optional, defaults to input filename with .sql extension)
+
+### Default Behavior
+
+If no input file is specified, the tool will automatically look for a seed file at:
+
+`src/scripts/seed.ts`
+
+This is the standard location for seed files in Redwood projects.
 
 ### Examples
 
 ```bash
-# Basic usage
+# Auto-detect seed file and generate SQL
+node seedToSql.mjs
+
+# Basic usage with explicit input
 node seedToSql.mjs --input ./seed.ts
 
 # Specify output file
