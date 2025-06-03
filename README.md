@@ -23,6 +23,7 @@ npx rwsdk-tools routes
 npx rwsdk-tools component
 npx rwsdk-tools tailwind
 npx rwsdk-tools seedtosql
+npx rwsdk-tools merge
 
 # Show help
 npx rwsdk-tools help
@@ -174,6 +175,36 @@ Features:
 - Handles nested relations and connections
 - Supports TypeScript and JavaScript seed files
 - No external dependencies required
+
+### mergePrisma
+
+The `merge` tool combines multiple Prisma schema files into a single schema.prisma file.
+
+```bash
+npx rwsdk-tools merge
+```
+
+This command:
+
+1. Copies the `mergePrismaSchema.mjs` script to your project's `src/scripts` directory
+2. Adds a `merge` script to your project's package.json file that runs: `node src/scripts/mergePrismaSchema.mjs`
+
+After installation, you can merge your Prisma schemas by running:
+
+```bash
+pnpm merge
+```
+
+Features:
+
+- Automatically finds and merges all .prisma files from specified directories
+- Backs up existing schema.prisma file to schema.prisma.bak before overwriting it
+- Includes the backup file content in the merge process to preserve existing schema
+- Uses .bak extension to avoid Prisma validation errors with duplicate models
+- Intelligently merges models with the same name, preserving unique fields
+- Handles generators, datasources, models, and enums
+- Supports commented model additions with special syntax
+- Sorts models alphabetically for better readability
 
 ## Requirements
 

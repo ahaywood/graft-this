@@ -51,6 +51,9 @@ function main() {
     case "seedtosql":
       installSeedToSqlTool();
       break;
+    case "merge":
+      installMergePrismaTool();
+      break;
     case "help":
       showHelp();
       break;
@@ -77,6 +80,7 @@ function showHelp() {
     "  npx rwsdk-tools shadcn         Set up shadcn UI components for your project"
   );
   console.log("  npx rwsdk-tools seedtosql      Install Seed to SQL converter");
+  console.log("  npx rwsdk-tools merge          Install Prisma schema merger");
   console.log("  npx rwsdk-tools help           Show this help message");
 }
 
@@ -92,6 +96,7 @@ function installAllTools() {
   installTailwindSetup();
   installShadcnSetup();
   installSeedToSqlTool();
+  installMergePrismaTool();
 
   console.log("\n\x1b[32mAll tools installed successfully!\x1b[0m");
 }
@@ -640,6 +645,54 @@ function installSeedToSqlTool() {
       `\x1b[31mError installing Seed to SQL converter tool: ${error.message}\x1b[0m`
     );
     process.exit(1);
+  }
+}
+
+/**
+ * Install the Prisma schema merger tool to the current project
+ */
+function installMergePrismaTool() {
+  console.log("\x1b[36mInstalling Prisma schema merger tool...\x1b[0m");
+
+  const projectPath = config.defaultInstallPath;
+  const scriptsDir = path.join(projectPath, "src", "scripts");
+  const sourceFile = path.join(
+    __dirname,
+    "tools",
+    "mergePrisma",
+    "mergePrismaSchema.mjs"
+  );
+  const targetFile = path.join(scriptsDir, "mergePrismaSchema.mjs");
+
+  try {
+    // Create scripts directory if it doesn't exist
+    if (!fs.existsSync(scriptsDir)) {
+      fs.mkdirSync(scriptsDir, { recursive: true });
+      console.log(`\x1b[32m✓ Created scripts directory: ${scriptsDir}\x1b[0m`);
+    }
+
+    // Copy the mergePrismaSchema.mjs file to the scripts directory
+    fs.copyFileSync(sourceFile, targetFile);
+    console.log(
+      `\x1b[32m✓ Copied mergePrismaSchema.mjs to ${targetFile}\x1b[0m`
+    );
+
+    // Add the script to package.json
+    addScriptToPackageJson(
+      projectPath,
+      "merge",
+      "node src/scripts/mergePrismaSchema.mjs"
+    );
+
+    console.log(
+      "\n\x1b[32mPrisma schema merger tool installed successfully!\x1b[0m"
+    );
+    console.log("\n\nNext steps:");
+    console.log("  pnpm merge\n\n");
+  } catch (error) {
+    console.error(
+      `Error installing Prisma schema merger tool: ${error.message}`
+    );
   }
 }
 

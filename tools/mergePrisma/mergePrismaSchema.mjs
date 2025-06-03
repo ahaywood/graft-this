@@ -10,11 +10,30 @@ const __dirname = path.dirname(__filename);
 const SCHEMA_DIR = path.resolve(__dirname, "../../prisma/schema");
 const APP_DIR = path.resolve(__dirname, "../../src/app");
 const TARGET_FILE = path.resolve(__dirname, "../../prisma/schema.prisma");
+// Use the schema directory for backup but with a .bak extension to avoid conflicts with Prisma
+const SCHEMA_BACKUP_FILE = path.resolve(__dirname, "../../prisma/schema/schema.prisma.bak");
 
 // Main function to merge schema files
 async function mergePrismaSchemas() {
   try {
     console.log("🚀 Starting Prisma schema merge...");
+
+    // Check if the target file exists and if so, backup to schema directory if backup file doesn't exist
+    if (fs.existsSync(TARGET_FILE)) {
+      // Check if schema directory exists, if not create it
+      if (!fs.existsSync(SCHEMA_DIR)) {
+        fs.mkdirSync(SCHEMA_DIR, { recursive: true });
+        console.log(`📁 Created schema directory: ${SCHEMA_DIR}`);
+      }
+      
+      // Only copy to schema backup if the backup file doesn't already exist
+      if (!fs.existsSync(SCHEMA_BACKUP_FILE)) {
+        fs.copyFileSync(TARGET_FILE, SCHEMA_BACKUP_FILE);
+        console.log(`📋 Backed up existing schema to ${SCHEMA_BACKUP_FILE}`);
+      } else {
+        console.log(`ℹ️ Schema backup already exists at ${SCHEMA_BACKUP_FILE}, skipping backup`);
+      }
+    }
 
     // Read all .prisma files from the schema directory
     const schemaFilesFromSchemaDir = fs.existsSync(SCHEMA_DIR)
@@ -27,8 +46,18 @@ async function mergePrismaSchemas() {
     // Find all .prisma files recursively in the app directory
     const schemaFilesFromAppDir = findPrismaFilesRecursively(APP_DIR);
 
+        // Read the backup file if it exists
+    let backupFileContent = null;
+    if (fs.existsSync(SCHEMA_BACKUP_FILE)) {
+      backupFileContent = fs.readFileSync(SCHEMA_BACKUP_FILE, "utf8");
+      console.log(`📄 Reading backup file: ${SCHEMA_BACKUP_FILE}`);
+    }
+    
     // Combine all schema files
-    const schemaFiles = [...schemaFilesFromSchemaDir, ...schemaFilesFromAppDir];
+    const schemaFiles = [
+      ...schemaFilesFromSchemaDir, 
+      ...schemaFilesFromAppDir
+    ];
 
     console.log(`📁 Found ${schemaFiles.length} schema files to merge`);
 
@@ -66,6 +95,39 @@ async function mergePrismaSchemas() {
 
             // Store this to be added to the appropriate model later
             console.log(`Found additions for model ${targetModel}`);
+            processModelAdditions(models, targetModel, fieldLines);
+          }
+        }
+      }
+    }
+    
+    // Process the backup file if it exists
+    if (backupFileContent) {
+      console.log(`📄 Processing backup file content...`);
+      
+      // Extract different sections from the backup file
+      extractSection(backupFileContent, /generator\s+\w+\s+{[^}]*}/gs, generators);
+      extractSection(backupFileContent, /datasource\s+\w+\s+{[^}]*}/gs, datasources);
+      extractSection(backupFileContent, /model\s+\w+\s+{[^}]*}/gs, models);
+      extractSection(backupFileContent, /enum\s+\w+\s+{[^}]*}/gs, enums);
+
+      // Also look for commented model sections that might be intended as additions in the backup file
+      const commentedModelAdditions = backupFileContent.match(
+        /\/\*\*[\s\S]*?ADD TO (\w+) MODEL[\s\S]*?\*\/([\s\S]*?)(\*\/|$)/g
+      );
+      if (commentedModelAdditions) {
+        for (const addition of commentedModelAdditions) {
+          const modelNameMatch = addition.match(/ADD TO (\w+) MODEL/);
+          if (modelNameMatch && modelNameMatch[1]) {
+            const targetModel = modelNameMatch[1];
+            const fieldLines = addition
+              .replace(/\/\*\*[\s\S]*?\*\//, "") // Remove the comment markers
+              .replace(/model\s+\w+\s+{/, "") // Remove any model declaration
+              .replace(/}/, "") // Remove closing brace
+              .trim();
+
+            // Store this to be added to the appropriate model later
+            console.log(`Found additions for model ${targetModel} in backup file`);
             processModelAdditions(models, targetModel, fieldLines);
           }
         }
@@ -110,6 +172,8 @@ async function mergePrismaSchemas() {
       "",
       ...modelsWithSpacing,
     ].join("\n");
+
+    // The backup process has been moved to the beginning of the function
 
     // Write the merged schema to the target file
     fs.writeFileSync(TARGET_FILE, finalSchema);

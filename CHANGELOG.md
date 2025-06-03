@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added colored output to the CLI for improved readability and user experience
 - Implemented color-coding: green for success messages, cyan for process messages, yellow for warnings, and red for errors
 - Added bold formatting for important headings like "Next steps" and "Usage"
+- Added Prisma schema merger tool (`npx rwsdk-tools merge`):
+  - Automatically merges multiple Prisma schema files into a single schema.prisma file
+  - Backs up existing schema.prisma file to schema.prisma.bak before overwriting
+  - Includes backup file content in the merge process
+  - Handles model merging with field deduplication
+  - Supports schema files from multiple directories
+  - Preserves model additions from commented sections
 - Enhanced route generator to support external route files with multiple import patterns:
   - Direct variable references in prefix calls: `prefix("/user", userRoutes)`
   - Spread syntax for route arrays: `...userRoutes`
