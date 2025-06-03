@@ -9,11 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added email tool (`npx rwsdk-tools email`) for setting up email functionality with Resend
-- Implemented automatic installation of the Resend package
-- Added environment variable configuration for Resend API key
-- Created email client setup in src/app/lib/email.ts
-- Added optional integration with React Email for creating email templates
-- Added comprehensive documentation for the email tool
+  - Implemented automatic installation of the Resend package
+  - Added environment variable configuration for Resend API key
+  - Created email client setup in src/app/lib/email.ts
+  - Added optional integration with React Email for creating email templates
+  - Added comprehensive documentation for the email tool
+- Added windsurf tool (`npx rwsdk-tools windsurf`) for setting up code quality checks and workflows
+  - Created default rules for common code quality issues
+  - Added workflow templates for pre-commit and PR checks
+  - Implemented non-destructive installation that preserves existing configurations
+  - Added comprehensive documentation for the windsurf tool
 
 ### Changed
 - Modified the seedToSql tool to place files in the `src/scripts` directory instead of the root `scripts` directory

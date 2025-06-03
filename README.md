@@ -25,6 +25,7 @@ npx rwsdk-tools tailwind
 npx rwsdk-tools seedtosql
 npx rwsdk-tools merge
 npx rwsdk-tools email
+npx rwsdk-tools windsurf
 
 # Show help
 npx rwsdk-tools help
@@ -246,6 +247,30 @@ Features:
 - Optional React Email integration for beautiful, responsive email templates
 - Works with Cloudflare Workers environment variables
 - Simple, clean API for sending emails from your application
+
+### windsurf
+
+The `windsurf` tool sets up configuration for code quality checks and workflows in your RWSDK project.
+
+```bash
+npx rwsdk-tools windsurf
+```
+
+This command:
+
+1. Creates a `.windsurf` directory in your project root (if it doesn't already exist)
+2. Copies default rules to the `.windsurf/rules` directory
+3. Copies workflow templates to the `.windsurf/workflows` directory
+
+After installation, you can customize the Windsurf configuration by editing the files in the `.windsurf` directory.
+
+Features:
+
+- Pre-configured code quality rules
+- Workflow templates for pre-commit and PR checks
+- Non-destructive installation that preserves existing configurations
+- Custom rule definitions for project-specific requirements
+- Integrated workflow templates that work with common package managers
 
 ## Requirements
 

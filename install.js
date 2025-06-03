@@ -57,6 +57,9 @@ function main() {
     case "email":
       installEmailTool();
       break;
+    case "windsurf":
+      installWindsurfTool();
+      break;
     case "help":
       showHelp();
       break;
@@ -85,6 +88,7 @@ function showHelp() {
   console.log("  npx rwsdk-tools seedtosql      Install Seed to SQL converter");
   console.log("  npx rwsdk-tools merge          Install Prisma schema merger");
   console.log("  npx rwsdk-tools email          Set up email functionality with Resend");
+  console.log("  npx rwsdk-tools windsurf       Set up Windsurf configuration");
   console.log("  npx rwsdk-tools help           Show this help message");
 }
 
@@ -102,6 +106,7 @@ function installAllTools() {
   installSeedToSqlTool();
   installMergePrismaTool();
   installEmailTool();
+  installWindsurfTool();
 
   console.log("\n\x1b[32mAll tools installed successfully!\x1b[0m");
 }
@@ -718,6 +723,29 @@ function installEmailTool() {
     console.log("\x1b[32m✓ Email functionality set up successfully!\x1b[0m");
   } catch (error) {
     console.error(`\x1b[31mError setting up email functionality: ${error.message}\x1b[0m`);
+    process.exit(1);
+  }
+}
+
+/**
+ * Install the windsurf tool and set up windsurf configuration
+ */
+function installWindsurfTool() {
+  const toolPath = path.join(config.toolsDir, "windsurf");
+  const windsurfScriptPath = path.join(toolPath, "index.js");
+
+  console.log("\x1b[36mSetting up Windsurf configuration...\x1b[0m");
+
+  try {
+    // Make sure the windsurf script is executable
+    fs.chmodSync(windsurfScriptPath, '755');
+    
+    // Execute the windsurf setup script
+    execSync(`node ${windsurfScriptPath}`, { stdio: 'inherit' });
+    
+    console.log("\x1b[32m✓ Windsurf configuration set up successfully!\x1b[0m");
+  } catch (error) {
+    console.error(`\x1b[31mError setting up Windsurf configuration: ${error.message}\x1b[0m`);
     process.exit(1);
   }
 }
