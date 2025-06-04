@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added workflow templates for pre-commit and PR checks
   - Implemented non-destructive installation that preserves existing configurations
   - Added comprehensive documentation for the windsurf tool
+- Added addon tools for managing RedwoodSDK addons:
+  - Added addonGenerate tool (`npx rwsdk-tools addon generate`) for generating addon configuration files
+    - Automatically analyzes addon content to generate addon.jsonc files
+    - Detects required packages, environment variables, and dependencies
+    - Identifies CSS files, routes, and ShadCN components used in the addon
+    - Adds an `addon:generate` script to package.json
+  - Added addonInstall tool (`npx rwsdk-tools addon install`) for installing RedwoodSDK addons
+    - Supports installation from local directories or GitHub repositories
+    - Handles all aspects of addon installation including dependencies, environment variables, and routes
+    - Provides flexible options for source and destination directories
+    - Adds an `addon:install` script to package.json
 
 ### Changed
 - Modified the seedToSql tool to place files in the `src/scripts` directory instead of the root `scripts` directory

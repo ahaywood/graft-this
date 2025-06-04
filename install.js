@@ -60,6 +60,17 @@ function main() {
     case "windsurf":
       installWindsurfTool();
       break;
+    case "addon":
+      const addonSubcommand = args[1];
+      if (addonSubcommand === "generate") {
+        installAddonGenerateTool();
+      } else if (addonSubcommand === "install") {
+        installAddonInstallTool();
+      } else {
+        console.error(`Unknown addon subcommand: ${addonSubcommand}`);
+        showHelp();
+      }
+      break;
     case "help":
       showHelp();
       break;
@@ -87,8 +98,12 @@ function showHelp() {
   );
   console.log("  npx rwsdk-tools seedtosql      Install Seed to SQL converter");
   console.log("  npx rwsdk-tools merge          Install Prisma schema merger");
-  console.log("  npx rwsdk-tools email          Set up email functionality with Resend");
+  console.log(
+    "  npx rwsdk-tools email          Set up email functionality with Resend"
+  );
   console.log("  npx rwsdk-tools windsurf       Set up Windsurf configuration");
+  console.log("  npx rwsdk-tools addon generate Generate addon configuration");
+  console.log("  npx rwsdk-tools addon install  Install RedwoodSDK addons");
   console.log("  npx rwsdk-tools help           Show this help message");
 }
 
@@ -107,6 +122,8 @@ function installAllTools() {
   installMergePrismaTool();
   installEmailTool();
   installWindsurfTool();
+  installAddonGenerateTool();
+  installAddonInstallTool();
 
   console.log("\n\x1b[32mAll tools installed successfully!\x1b[0m");
 }
@@ -715,14 +732,16 @@ function installEmailTool() {
 
   try {
     // Make sure the email script is executable
-    fs.chmodSync(emailScriptPath, '755');
-    
+    fs.chmodSync(emailScriptPath, "755");
+
     // Execute the email setup script
-    execSync(`node ${emailScriptPath}`, { stdio: 'inherit' });
-    
+    execSync(`node ${emailScriptPath}`, { stdio: "inherit" });
+
     console.log("\x1b[32m✓ Email functionality set up successfully!\x1b[0m");
   } catch (error) {
-    console.error(`\x1b[31mError setting up email functionality: ${error.message}\x1b[0m`);
+    console.error(
+      `\x1b[31mError setting up email functionality: ${error.message}\x1b[0m`
+    );
     process.exit(1);
   }
 }
@@ -738,14 +757,116 @@ function installWindsurfTool() {
 
   try {
     // Make sure the windsurf script is executable
-    fs.chmodSync(windsurfScriptPath, '755');
-    
+    fs.chmodSync(windsurfScriptPath, "755");
+
     // Execute the windsurf setup script
-    execSync(`node ${windsurfScriptPath}`, { stdio: 'inherit' });
-    
+    execSync(`node ${windsurfScriptPath}`, { stdio: "inherit" });
+
     console.log("\x1b[32m✓ Windsurf configuration set up successfully!\x1b[0m");
   } catch (error) {
-    console.error(`\x1b[31mError setting up Windsurf configuration: ${error.message}\x1b[0m`);
+    console.error(
+      `\x1b[31mError setting up Windsurf configuration: ${error.message}\x1b[0m`
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Install the addonGenerate tool to the current project
+ */
+function installAddonGenerateTool() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, "addonGenerate");
+
+  console.log("\x1b[36mInstalling addonGenerate tool...\x1b[0m");
+
+  try {
+    // Create src/scripts directory if it doesn't exist
+    const scriptsDir = path.join(targetPath, "src", "scripts");
+    fs.mkdirSync(scriptsDir, { recursive: true });
+
+    // Copy generateAddonConfig.mjs to src/scripts directory
+    const sourcePath = path.join(toolPath, "generateAddonConfig.mjs");
+    const destPath = path.join(scriptsDir, "generateAddonConfig.mjs");
+
+    if (!fs.existsSync(sourcePath)) {
+      console.error(
+        `Error: generateAddonConfig.mjs not found at ${sourcePath}`
+      );
+      process.exit(1);
+    }
+
+    fs.copyFileSync(sourcePath, destPath);
+    console.log(
+      `\x1b[32m✓ Copied generateAddonConfig.mjs to ${destPath}\x1b[0m`
+    );
+
+    // Add script to package.json
+    addScriptToPackageJson(
+      targetPath,
+      "addon:generate",
+      "node src/scripts/generateAddonConfig.mjs"
+    );
+
+    console.log("\x1b[32m✓ addonGenerate tool installed successfully!\x1b[0m");
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
+    console.log("  pnpm addon:generate <addonName>\n\n");
+  } catch (error) {
+    console.error(
+      `\x1b[31mError installing addonGenerate tool: ${error.message}\x1b[0m`
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Install the addonInstall tool to the current project
+ */
+function installAddonInstallTool() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, "addonInstall");
+
+  console.log("\x1b[36mInstalling addonInstall tool...\x1b[0m");
+
+  try {
+    // Create src/scripts directory if it doesn't exist
+    const scriptsDir = path.join(targetPath, "src", "scripts");
+    fs.mkdirSync(scriptsDir, { recursive: true });
+
+    // Copy installAddon.mjs to src/scripts directory
+    const sourcePath = path.join(toolPath, "installAddon.mjs");
+    const destPath = path.join(scriptsDir, "installAddon.mjs");
+
+    if (!fs.existsSync(sourcePath)) {
+      console.error(
+        `Error: installAddon.mjs not found at ${sourcePath}`
+      );
+      process.exit(1);
+    }
+
+    fs.copyFileSync(sourcePath, destPath);
+    console.log(
+      `\x1b[32m✓ Copied installAddon.mjs to ${destPath}\x1b[0m`
+    );
+
+    // Add script to package.json
+    addScriptToPackageJson(
+      targetPath,
+      "addon:install",
+      "node src/scripts/installAddon.mjs"
+    );
+
+    console.log("\x1b[32m✓ addonInstall tool installed successfully!\x1b[0m");
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
+    console.log("  pnpm addon:install install <addonName> [options]\n\n");
+    console.log("  Options:\n");
+    console.log("    --repo <url>    Install from a GitHub repository");
+    console.log("    --source <path> Full path to the addon directory");
+    console.log("    --dest <path>   Destination directory (defaults to src/app/addons)\n");
+  } catch (error) {
+    console.error(
+      `\x1b[31mError installing addonInstall tool: ${error.message}\x1b[0m`
+    );
     process.exit(1);
   }
 }

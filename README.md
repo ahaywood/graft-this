@@ -26,6 +26,8 @@ npx rwsdk-tools seedtosql
 npx rwsdk-tools merge
 npx rwsdk-tools email
 npx rwsdk-tools windsurf
+npx rwsdk-tools addon generate
+npx rwsdk-tools addon install
 
 # Show help
 npx rwsdk-tools help
@@ -199,6 +201,53 @@ After installation, you can merge your Prisma schemas by running:
 ```bash
 pnpm merge
 ```
+
+### addonGenerate
+
+The `addon generate` tool helps generate configuration files for RedwoodSDK addons.
+
+```bash
+npx rwsdk-tools addon generate
+```
+
+This command:
+
+1. Copies the `generateAddonConfig.mjs` script to your project's `src/scripts` directory
+2. Adds an `addon:generate` script to your project's package.json file that runs: `node src/scripts/generateAddonConfig.mjs`
+
+After installation, you can generate addon configuration by running:
+
+```bash
+pnpm addon:generate <addonName>
+```
+
+The script analyzes an add-on's content and dynamically generates the addon.jsonc file by scanning imports, environment variables, CSS files, and other components.
+
+### addonInstall
+
+The `addon install` tool helps install RedwoodSDK addons into your project.
+
+```bash
+npx rwsdk-tools addon install
+```
+
+This command:
+
+1. Copies the `installAddon.mjs` script to your project's `src/scripts` directory
+2. Adds an `addon:install` script to your project's package.json file that runs: `node src/scripts/installAddon.mjs`
+
+After installation, you can install addons by running:
+
+```bash
+pnpm addon:install install <addonName> [options]
+```
+
+Options:
+- `--repo <url>`: Install from a GitHub repository
+- `--source <path>`: Full path to the addon directory
+- `--dest <path>`: Destination directory (defaults to src/app/addons)
+
+The script handles all aspects of installing an addon, including copying files, installing dependencies, setting up environment variables, injecting CSS styles, adding routes, and setting up Prisma schema.
 
 Features:
 
