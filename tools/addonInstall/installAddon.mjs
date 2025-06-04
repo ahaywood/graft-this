@@ -116,8 +116,12 @@ function copyDirectory(source, destination) {
       // Recursively copy directory
       copyDirectory(sourcePath, destPath);
     } else {
-      // Copy file
-      fs.copyFileSync(sourcePath, destPath);
+      // Copy file only if it exists
+      if (fs.existsSync(sourcePath)) {
+        fs.copyFileSync(sourcePath, destPath);
+      } else {
+        log('⚠️', `Skipping non-existent file: ${sourcePath}`, colors.yellow);
+      }
     }
   }
   

@@ -400,7 +400,7 @@ function filterPackages(packages, usingShadcn) {
     "class-variance-authority",
     "clsx",
     "tailwind-merge",
-    "@radix-ui",
+    // Removed @radix-ui from the exclusion list to include it in the generated package list
   ];
 
   return packages.filter((pkg) => {
@@ -410,6 +410,7 @@ function filterPackages(packages, usingShadcn) {
     // Exclude ShadCN-related packages if using ShadCN
     if (usingShadcn && excludeWithShadcn.includes(pkg)) return false;
 
+    // Include all @radix-ui packages, even when using ShadCN
     return true;
   });
 }
