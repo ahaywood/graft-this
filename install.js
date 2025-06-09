@@ -42,6 +42,9 @@ function main() {
     case "component":
       installComponentGeneratorTool();
       break;
+    case "page":
+      installPageGeneratorTool();
+      break;
     case "tailwind":
       installTailwindSetup();
       break;
@@ -90,6 +93,7 @@ function showHelp() {
   console.log("  npx rwsdk-tools                Install all tools");
   console.log("  npx rwsdk-tools routes         Install routes generator");
   console.log("  npx rwsdk-tools component      Install component generator");
+  console.log("  npx rwsdk-tools page           Install page generator");
   console.log(
     "  npx rwsdk-tools tailwind       Set up Tailwind CSS for your project"
   );
@@ -116,6 +120,7 @@ function installAllTools() {
   // Install all available tools
   installGenerateRoutesTool();
   installComponentGeneratorTool();
+  installPageGeneratorTool();
   installTailwindSetup();
   installShadcnSetup();
   installSeedToSqlTool();
@@ -204,8 +209,8 @@ function addScriptToPackageJson(projectPath, scriptName, scriptCommand) {
     const spacing = packageJsonContent.includes('  "')
       ? 2
       : packageJsonContent.includes('    "')
-      ? 4
-      : 2;
+        ? 4
+        : 2;
     fs.writeFileSync(
       packageJsonPath,
       JSON.stringify(packageJson, null, spacing)
@@ -330,6 +335,121 @@ function installComponentGeneratorTool() {
   } catch (error) {
     console.error(
       `\x1b[31mError installing component generator tool: ${error.message}\x1b[0m`
+    );
+    process.exit(1);
+  }
+}
+
+function installPageGeneratorTool() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, "pageGenerator");
+
+  console.log("\x1b[36mInstalling page generator tool...\x1b[0m");
+
+  try {
+    // Check if plopfile.mjs exists in the project root
+    const plopfilePath = path.join(targetPath, "plopfile.mjs");
+
+    const componentToolPath = path.join(config.toolsDir, "componentGenerator");
+    const sourcePlopfilePath = path.join(componentToolPath, "plopfile.mjs");
+
+    if (!fs.existsSync(sourcePlopfilePath)) {
+      console.error(`Error: plopfile.mjs not found at ${sourcePlopfilePath}`);
+      process.exit(1);
+    }
+
+    // Copy plopfile.mjs to project root
+    fs.copyFileSync(sourcePlopfilePath, plopfilePath);
+    console.log(`\x1b[32m\u2713 Copied plopfile.mjs to ${plopfilePath}\x1b[0m`);
+
+    // Create plop-templates directory and copy templates
+    const templateSourceDir = path.join(toolPath, "plop-templates");
+    const templateTargetDir = path.join(targetPath, "plop-templates");
+
+    if (fs.existsSync(templateSourceDir)) {
+      // Create the target directory if it doesn't exist
+      if (!fs.existsSync(templateTargetDir)) {
+        fs.mkdirSync(templateTargetDir, { recursive: true });
+      }
+
+      // Copy the page templates directory
+      const pageSourceDir = path.join(templateSourceDir, "pages");
+      const pageTargetDir = path.join(templateTargetDir, "page");
+
+      if (fs.existsSync(pageSourceDir)) {
+        if (!fs.existsSync(pageTargetDir)) {
+          fs.mkdirSync(pageTargetDir, { recursive: true });
+        }
+
+        // Copy all template files
+        const templateFiles = fs.readdirSync(pageSourceDir);
+        templateFiles.forEach((file) => {
+          const sourcePath = path.join(pageSourceDir, file);
+          const targetPath = path.join(pageTargetDir, file);
+          fs.copyFileSync(sourcePath, targetPath);
+          console.log(
+            `\x1b[32m\u2713 Copied template ${file} to ${targetPath}\x1b[0m`
+          );
+        });
+      }
+    }
+
+    // Add scripts to package.json
+    addScriptToPackageJson(targetPath, "plop", "plop");
+    addScriptToPackageJson(targetPath, "page", "plop page");
+    addScriptToPackageJson(targetPath, "restructure", "plop restructure");
+    addScriptToPackageJson(
+      targetPath,
+      "restructure-all",
+      "plop restructure-all"
+    );
+
+    // Check if plop is installed and install it if needed
+    try {
+      // Check if plop is installed
+      const plopInstalled = checkPlopInstalled(targetPath);
+
+      if (!plopInstalled) {
+        console.log(
+          "\n\x1b[33m\u26A0\uFE0F Plop is not installed in this project. Installing plop..."
+        );
+
+        try {
+          // Run the pnpm install command to install plop
+          const { execSync } = require("child_process");
+          execSync("pnpm install -D plop", {
+            cwd: targetPath,
+            stdio: "inherit", // Show the output to the user
+          });
+
+          console.log("\n\x1b[32m\u2705 Plop installed successfully!\x1b[0m\n");
+        } catch (error) {
+          console.error(
+            `\n\x1b[31m\u274C Error installing plop: ${error.message}\x1b[0m`
+          );
+          console.log(
+            "\n\x1b[33m\u26A0\uFE0F Please install plop manually by running:\x1b[0m"
+          );
+          console.log("\n  pnpm install -D plop\n");
+        }
+      } else {
+        console.log(
+          "\n\x1b[32m\u2713 Plop is already installed. You're all set!\x1b[0m\n"
+        );
+      }
+    } catch (error) {
+      // Ignore errors when checking for plop
+      console.error(`Error checking for plop: ${error.message}`);
+    }
+
+    console.log(
+      "\x1b[32m\u2713 page generator tool installed successfully!\x1b[0m"
+    );
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
+    console.log("  pnpm run page\n\n");
+  } catch (error) {
+    console.error(
+      `\x1b[31mError installing page generator tool: ${error.message}\x1b[0m`
     );
     process.exit(1);
   }
