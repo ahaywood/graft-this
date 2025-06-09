@@ -42,7 +42,7 @@ export default function (plop) {
   const parseCommandLineArgs = () => {
     const args = process.argv.slice(2);
     const options = {};
-    
+
     // Check for --file flag
     if (args.includes('--file')) {
       options.structure = 'file';
@@ -57,31 +57,100 @@ export default function (plop) {
     } else if (args.includes('--folder')) {
       options.structure = 'folder';
     }
-    
+
     // Check for stories flags
     if (args.includes('--stories')) {
       options.withStories = true;
     } else if (args.includes('--no-stories')) {
       options.withStories = false;
     }
-    
+
     // Check for tests flags
     if (args.includes('--tests')) {
       options.withTests = true;
     } else if (args.includes('--no-tests')) {
       options.withTests = false;
     }
-    
+
+    // Check for withRoutes flags
+    if (args.includes('--withRoutes')) {
+      options.withRoutes = true;
+    } else if (args.includes('--no-withRoutes')) {
+      options.withRoutes = false;
+    }
+
     return options;
   };
-  
+
   // Get command line arguments
   const cmdArgs = parseCommandLineArgs();
-  
+
   // Keep the action type for backward compatibility
-  plop.setActionType('parseArgs', function(answers, config) {
+  plop.setActionType('parseArgs', function (answers, config) {
     return 'Args parsed';
   });
+
+  // Custom action to add page routes to worker
+  plop.setActionType('addPageRoutesToWorker', function (answers, config) {
+    const workerPath = path.join(process.cwd(), 'src/worker.tsx');
+
+    if (!fs.existsSync(workerPath)) {
+      throw new Error('worker.tsx file not found');
+    }
+
+    const workerContent = fs.readFileSync(workerPath, 'utf-8');
+    const pageName = answers.name;
+    // Convert to camelCase and add Routes suffix (e.g., HomePage -> homePageRoutes)
+    const routesImportName = pageName.charAt(0).toLowerCase() + pageName.slice(1) + 'Routes';
+
+    // Create import statement
+    const importStatement = `import { ${routesImportName} } from "@/app/pages/${pageName}/routes"`;
+
+    // Check if import already exists
+    if (workerContent.includes(importStatement)) {
+      return 'Routes already added to worker';
+    }
+
+    let updatedContent = workerContent;
+
+    // Add import after existing route imports
+    const importRegex = /import { [^}]+ } from "@\/app\/pages\/[^"]+\/routes"/g;
+    const imports = workerContent.match(importRegex);
+
+    if (imports && imports.length > 0) {
+      // Find the last route import and add after it
+      const lastImport = imports[imports.length - 1];
+      const lastImportIndex = workerContent.lastIndexOf(lastImport);
+      const insertIndex = lastImportIndex + lastImport.length;
+      updatedContent = workerContent.slice(0, insertIndex) + '\n' + importStatement + workerContent.slice(insertIndex);
+    } else {
+      // Add after other imports (look for user routes import)
+      const userRoutesImport = 'import { userRoutes } from "@/app/pages/user/routes"';
+      if (workerContent.includes(userRoutesImport)) {
+        updatedContent = workerContent.replace(userRoutesImport, userRoutesImport + '\n' + importStatement);
+      }
+    }    // Add routes to the render array - look for the pattern where homePageRoutes is spread
+    const renderArrayRegex = /(prefix\("\/user", userRoutes\),\s*)(\.\.\..*PageRoutes,\s*)(\]\),)/s;
+    const match = updatedContent.match(renderArrayRegex);
+
+    if (match) {
+      // Add after existing homePageRoutes
+      const replacement = `${match[1]}${match[2]}...${routesImportName},\n    ${match[3]}`;
+      updatedContent = updatedContent.replace(renderArrayRegex, replacement);
+    } else {
+      // Fallback: look for pattern without existing homePageRoutes and add after userRoutes
+      const fallbackRegex = /(prefix\("\/user", userRoutes\),\s*)(\]\),)/s;
+      const fallbackMatch = updatedContent.match(fallbackRegex);
+      if (fallbackMatch) {
+        const replacement = `${fallbackMatch[1]}...${routesImportName},\n    ${fallbackMatch[2]}`;
+        updatedContent = updatedContent.replace(fallbackRegex, replacement);
+      }
+    }
+
+    fs.writeFileSync(workerPath, updatedContent);
+    return `Added ${pageName} routes to worker`;
+  });
+
 
   // Create new component
   plop.setGenerator("component", {
@@ -134,12 +203,12 @@ export default function (plop) {
     // Apply command line arguments to the answers
     skipPrompts: Object.keys(cmdArgs).length > 0,
     skipActionsOnSkippedPrompts: false,
-    actions: function(data) {
+    actions: function (data) {
       // Apply command line arguments to the data
       Object.assign(data, cmdArgs);
-      
+
       const actions = [];
-      
+
       if (data.structure === "folder") {
         // Add component in folder
         actions.push({
@@ -147,14 +216,14 @@ export default function (plop) {
           path: "src/app/components/{{name}}/{{name}}.tsx",
           templateFile: "plop-templates/component/component.hbs",
         });
-        
+
         // Add index file for folder structure
         actions.push({
           type: "add",
           path: "src/app/components/{{name}}/index.ts",
           templateFile: "plop-templates/component/index.hbs",
         });
-        
+
         // Conditionally add stories
         if (data.withStories) {
           actions.push({
@@ -163,7 +232,7 @@ export default function (plop) {
             templateFile: "plop-templates/component/stories.hbs",
           });
         }
-        
+
         // Conditionally add tests
         if (data.withTests) {
           actions.push({
@@ -179,7 +248,7 @@ export default function (plop) {
           path: "src/app/components/{{name}}.tsx",
           templateFile: "plop-templates/component/component.hbs",
         });
-        
+
         // Conditionally add stories as single file
         if (data.withStories) {
           actions.push({
@@ -188,7 +257,7 @@ export default function (plop) {
             templateFile: "plop-templates/component/stories.hbs",
           });
         }
-        
+
         // Conditionally add tests as single file
         if (data.withTests) {
           actions.push({
@@ -198,7 +267,174 @@ export default function (plop) {
           });
         }
       }
-      
+
+      return actions;
+    }
+  });
+
+  // Create new page component
+  plop.setGenerator("page", {
+    description: "Create a new page page with optional stories, tests, and routes",
+    prompts: [
+      {
+        type: "input",
+        name: "name",
+        message: "Page name:",
+        validate: (value) => {
+          if (/.+/.test(value)) return true;
+          return "Page name is required";
+        }
+      },
+      {
+        type: "list",
+        name: "structure",
+        message: "Page structure:",
+        choices: [
+          { name: "Folder structure (page in its own folder)", value: "folder" },
+          { name: "Single file (no folder)", value: "file" }
+        ],
+        default: "folder",
+        when: (answers) => {
+          // Skip if structure was set by command line args
+          return cmdArgs.structure === undefined;
+        }
+      },
+      {
+        type: "confirm",
+        name: "withStories",
+        message: "Generate Storybook file?",
+        default: true,
+        when: (answers) => {
+          // Skip if withStories was set by command line args
+          return cmdArgs.withStories === undefined;
+        }
+      },
+      {
+        type: "confirm",
+        name: "withTests",
+        message: "Generate test file?",
+        default: true,
+        when: (answers) => {
+          // Skip if withTests was set by command line args
+          return cmdArgs.withTests === undefined;
+        }
+      },
+      {
+        type: "confirm",
+        name: "withRoutes",
+        message: "Generate routes file?",
+        default: true,
+      },
+      {
+        type: "confirm",
+        name: "addPageRoutesToWorker",
+        message: "Add routes to worker?",
+        default: true,
+      },
+
+    ],
+    // Apply command line arguments to the answers
+    skipPrompts: Object.keys(cmdArgs).length > 0,
+    skipActionsOnSkippedPrompts: false,
+    actions: function (data) {
+      // Apply command line arguments to the data
+      Object.assign(data, cmdArgs);
+
+      const actions = [];
+
+      if (data.structure === "folder") {
+        // Add page in folder
+        actions.push({
+          type: "add",
+          path: "src/app/pages/{{name}}/{{name}}.tsx",
+          templateFile: "plop-templates/page/page.hbs",
+        });
+
+        // Add index file for folder structure
+        actions.push({
+          type: "add",
+          path: "src/app/pages/{{name}}/index.ts",
+          templateFile: "plop-templates/page/index.hbs",
+        });
+
+        // Conditionally add stories
+        if (data.withStories) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}/{{name}}.stories.tsx",
+            templateFile: "plop-templates/page/stories.hbs",
+          });
+        }
+
+        // Conditionally add tests
+        if (data.withTests) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}/{{name}}.test.tsx",
+            templateFile: "plop-templates/page/test.hbs",
+          });
+        }
+
+        // Conditionally add routes
+        if (data.withRoutes) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}/routes.ts",
+            templateFile: "plop-templates/page/routes.hbs",
+          });
+        }
+
+        // Conditionally add routes to worker for folder structure
+        if (data.addPageRoutesToWorker && data.withRoutes) {
+          actions.push({
+            type: "addPageRoutesToWorker",
+            data: data
+          });
+        }
+      } else {
+        // Add page as single file
+        actions.push({
+          type: "add",
+          path: "src/app/pages/{{name}}.tsx",
+          templateFile: "plop-templates/page/page.hbs",
+        });
+
+        // Conditionally add stories as single file
+        if (data.withStories) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}.stories.tsx",
+            templateFile: "plop-templates/page/stories.hbs",
+          });
+        }
+
+        // Conditionally add tests as single file
+        if (data.withTests) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}.test.tsx",
+            templateFile: "plop-templates/page/test.hbs",
+          });
+        }
+
+        // Conditionally add routes as single file
+        if (data.withRoutes) {
+          actions.push({
+            type: "add",
+            path: "src/app/pages/{{name}}.routes.ts",
+            templateFile: "plop-templates/page/routes.hbs",
+          });
+        }
+      }
+
+      // Conditionally add routes to worker
+      if (data.addPageRoutesToWorker && data.withRoutes) {
+        actions.push({
+          type: "addPageRoutesToWorker",
+          data: data
+        });
+      }
+
       return actions;
     }
   });

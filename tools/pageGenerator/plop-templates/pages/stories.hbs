@@ -1,0 +1,37 @@
+import type { Meta, StoryObj } from '@storybook/react'
+import { {{name}} } from './{{name}}'
+
+const meta: Meta<typeof {{name}}> = {
+  component: {{name}},
+  title: 'Pages/{{name}}',
+  tags: ['autodocs'],
+  parameters: {
+    layout: 'fullscreen',
+  },
+}
+
+export default meta
+type Story = StoryObj<typeof {{name}}>
+
+export const Default: Story = {
+  args: {
+    ctx: {
+      user: null,
+      session: null
+    }
+  },
+}
+
+export const WithUser: Story = {
+  args: {
+    ctx: {
+      user: {
+        id: '1',
+        username: 'testuser'
+      },
+      session: {
+        userId: '1'
+      }
+    }
+  },
+}
