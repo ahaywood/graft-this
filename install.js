@@ -42,8 +42,14 @@ function main() {
     case "component":
       installComponentGeneratorTool();
       break;
+    case "page":
+      installPageGeneratorTool();
+      break;
     case "tailwind":
       installTailwindSetup();
+      break;
+    case "vitest":
+      installVitestSetup();
       break;
     case "shadcn":
       installShadcnSetup();
@@ -90,8 +96,12 @@ function showHelp() {
   console.log("  npx rwsdk-tools                Install all tools");
   console.log("  npx rwsdk-tools routes         Install routes generator");
   console.log("  npx rwsdk-tools component      Install component generator");
+  console.log("  npx rwsdk-tools page           Install page generator");
   console.log(
     "  npx rwsdk-tools tailwind       Set up Tailwind CSS for your project"
+  );
+  console.log(
+    "  npx rwsdk-tools vitest         Set up Vitest testing framework for your project"
   );
   console.log(
     "  npx rwsdk-tools shadcn         Set up shadcn UI components for your project"
@@ -116,7 +126,9 @@ function installAllTools() {
   // Install all available tools
   installGenerateRoutesTool();
   installComponentGeneratorTool();
+  installPageGeneratorTool();
   installTailwindSetup();
+  installVitestSetup();
   installShadcnSetup();
   installSeedToSqlTool();
   installMergePrismaTool();
@@ -204,8 +216,8 @@ function addScriptToPackageJson(projectPath, scriptName, scriptCommand) {
     const spacing = packageJsonContent.includes('  "')
       ? 2
       : packageJsonContent.includes('    "')
-      ? 4
-      : 2;
+        ? 4
+        : 2;
     fs.writeFileSync(
       packageJsonPath,
       JSON.stringify(packageJson, null, spacing)
@@ -330,6 +342,121 @@ function installComponentGeneratorTool() {
   } catch (error) {
     console.error(
       `\x1b[31mError installing component generator tool: ${error.message}\x1b[0m`
+    );
+    process.exit(1);
+  }
+}
+
+function installPageGeneratorTool() {
+  const targetPath = config.defaultInstallPath;
+  const toolPath = path.join(config.toolsDir, "pageGenerator");
+
+  console.log("\x1b[36mInstalling page generator tool...\x1b[0m");
+
+  try {
+    // Check if plopfile.mjs exists in the project root
+    const plopfilePath = path.join(targetPath, "plopfile.mjs");
+
+    const componentToolPath = path.join(config.toolsDir, "componentGenerator");
+    const sourcePlopfilePath = path.join(componentToolPath, "plopfile.mjs");
+
+    if (!fs.existsSync(sourcePlopfilePath)) {
+      console.error(`Error: plopfile.mjs not found at ${sourcePlopfilePath}`);
+      process.exit(1);
+    }
+
+    // Copy plopfile.mjs to project root
+    fs.copyFileSync(sourcePlopfilePath, plopfilePath);
+    console.log(`\x1b[32m\u2713 Copied plopfile.mjs to ${plopfilePath}\x1b[0m`);
+
+    // Create plop-templates directory and copy templates
+    const templateSourceDir = path.join(toolPath, "plop-templates");
+    const templateTargetDir = path.join(targetPath, "plop-templates");
+
+    if (fs.existsSync(templateSourceDir)) {
+      // Create the target directory if it doesn't exist
+      if (!fs.existsSync(templateTargetDir)) {
+        fs.mkdirSync(templateTargetDir, { recursive: true });
+      }
+
+      // Copy the page templates directory
+      const pageSourceDir = path.join(templateSourceDir, "pages");
+      const pageTargetDir = path.join(templateTargetDir, "page");
+
+      if (fs.existsSync(pageSourceDir)) {
+        if (!fs.existsSync(pageTargetDir)) {
+          fs.mkdirSync(pageTargetDir, { recursive: true });
+        }
+
+        // Copy all template files
+        const templateFiles = fs.readdirSync(pageSourceDir);
+        templateFiles.forEach((file) => {
+          const sourcePath = path.join(pageSourceDir, file);
+          const targetPath = path.join(pageTargetDir, file);
+          fs.copyFileSync(sourcePath, targetPath);
+          console.log(
+            `\x1b[32m\u2713 Copied template ${file} to ${targetPath}\x1b[0m`
+          );
+        });
+      }
+    }
+
+    // Add scripts to package.json
+    addScriptToPackageJson(targetPath, "plop", "plop");
+    addScriptToPackageJson(targetPath, "page", "plop page");
+    addScriptToPackageJson(targetPath, "restructure", "plop restructure");
+    addScriptToPackageJson(
+      targetPath,
+      "restructure-all",
+      "plop restructure-all"
+    );
+
+    // Check if plop is installed and install it if needed
+    try {
+      // Check if plop is installed
+      const plopInstalled = checkPlopInstalled(targetPath);
+
+      if (!plopInstalled) {
+        console.log(
+          "\n\x1b[33m\u26A0\uFE0F Plop is not installed in this project. Installing plop..."
+        );
+
+        try {
+          // Run the pnpm install command to install plop
+          const { execSync } = require("child_process");
+          execSync("pnpm install -D plop", {
+            cwd: targetPath,
+            stdio: "inherit", // Show the output to the user
+          });
+
+          console.log("\n\x1b[32m\u2705 Plop installed successfully!\x1b[0m\n");
+        } catch (error) {
+          console.error(
+            `\n\x1b[31m\u274C Error installing plop: ${error.message}\x1b[0m`
+          );
+          console.log(
+            "\n\x1b[33m\u26A0\uFE0F Please install plop manually by running:\x1b[0m"
+          );
+          console.log("\n  pnpm install -D plop\n");
+        }
+      } else {
+        console.log(
+          "\n\x1b[32m\u2713 Plop is already installed. You're all set!\x1b[0m\n"
+        );
+      }
+    } catch (error) {
+      // Ignore errors when checking for plop
+      console.error(`Error checking for plop: ${error.message}`);
+    }
+
+    console.log(
+      "\x1b[32m\u2713 page generator tool installed successfully!\x1b[0m"
+    );
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
+    console.log("  pnpm run page\n\n");
+  } catch (error) {
+    console.error(
+      `\x1b[31mError installing page generator tool: ${error.message}\x1b[0m`
     );
     process.exit(1);
   }
@@ -866,6 +993,219 @@ function installAddonInstallTool() {
   } catch (error) {
     console.error(
       `\x1b[31mError installing addonInstall tool: ${error.message}\x1b[0m`
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Check if Vitest dependencies are installed in the project
+ * @param {string} projectPath - Path to the project
+ * @returns {boolean} - Whether Vitest dependencies are installed
+ */
+function checkVitestInstalled(projectPath) {
+  const packageJsonPath = path.join(projectPath, "package.json");
+
+  try {
+    if (fs.existsSync(packageJsonPath)) {
+      const packageJsonContent = fs.readFileSync(packageJsonPath, "utf8");
+      const packageJson = JSON.parse(packageJsonContent);
+
+      // Check if vitest and related testing dependencies are installed
+      const hasVitestDep =
+        packageJson.dependencies && packageJson.dependencies.vitest;
+      const hasVitestDevDep =
+        packageJson.devDependencies && packageJson.devDependencies.vitest;
+
+      const hasTestingLibraryDep =
+        packageJson.dependencies && packageJson.dependencies["@testing-library/react"];
+      const hasTestingLibraryDevDep =
+        packageJson.devDependencies && packageJson.devDependencies["@testing-library/react"];
+
+      const hasJestDomDep =
+        packageJson.dependencies && packageJson.dependencies["@testing-library/jest-dom"];
+      const hasJestDomDevDep =
+        packageJson.devDependencies && packageJson.devDependencies["@testing-library/jest-dom"];
+
+      const hasJsdomDep =
+        packageJson.dependencies && packageJson.dependencies.jsdom;
+      const hasJsdomDevDep =
+        packageJson.devDependencies && packageJson.devDependencies.jsdom;
+
+      // Return true if all required packages are installed
+      return (
+        (hasVitestDep || hasVitestDevDep) &&
+        (hasTestingLibraryDep || hasTestingLibraryDevDep) &&
+        (hasJestDomDep || hasJestDomDevDep) &&
+        (hasJsdomDep || hasJsdomDevDep)
+      );
+    }
+  } catch (error) {
+    // Ignore errors when checking for vitest
+  }
+
+  return false;
+}
+
+/**
+ * Install and set up Vitest testing framework for an RWSDK project
+ */
+function installVitestSetup() {
+  const targetPath = config.defaultInstallPath;
+
+  console.log(
+    "\x1b[36mSetting up Vitest testing framework for your RWSDK project...\x1b[0m"
+  );
+
+  try {
+    // Step 1: Check if we're in an RWSDK project by looking for package.json
+    const packageJsonPath = path.join(targetPath, "package.json");
+    if (!fs.existsSync(packageJsonPath)) {
+      console.error(
+        `\x1b[31mError: package.json not found at ${packageJsonPath}\x1b[0m`
+      );
+      console.error("Make sure you are in an RWSDK project directory.");
+      process.exit(1);
+    }
+
+    // Step 2: Create vitest.config.ts file in the root
+    const vitestConfigPath = path.join(targetPath, "vitest.config.ts");
+    const vitestConfigContent = `import { defineConfig } from 'vitest/config'
+import path from 'path'
+
+export default defineConfig({
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+            '@generated': path.resolve(__dirname, './generated'),
+        },
+    },
+    test: {
+        environment: 'jsdom',
+        setupFiles: ['./src/test/setup.ts'],
+        globals: true,
+        testTimeout: 10000,
+    },
+})
+`;
+
+    if (fs.existsSync(vitestConfigPath)) {
+      console.log(
+        `\x1b[33m\u26A0\uFE0F vitest.config.ts already exists at ${vitestConfigPath}. Skipping...\x1b[0m`
+      );
+    } else {
+      fs.writeFileSync(vitestConfigPath, vitestConfigContent);
+      console.log(
+        `\x1b[32m\u2713 Created vitest.config.ts file at ${vitestConfigPath}\x1b[0m`
+      );
+    }
+
+    // Step 3: Create src/test directory and setup.ts file
+    const testDir = path.join(targetPath, "src", "test");
+    const setupPath = path.join(testDir, "setup.ts");
+    const setupContent = `import '@testing-library/jest-dom'
+
+// Set up global test environment
+global.ResizeObserver = global.ResizeObserver || class ResizeObserver {
+    constructor() { }
+    observe() { }
+    unobserve() { }
+    disconnect() { }
+}
+`;
+
+    if (!fs.existsSync(testDir)) {
+      fs.mkdirSync(testDir, { recursive: true });
+      console.log(`\x1b[32m\u2713 Created test directory at ${testDir}\x1b[0m`);
+    }
+
+    if (fs.existsSync(setupPath)) {
+      console.log(
+        `\x1b[33m\u26A0\uFE0F Test setup file already exists at ${setupPath}. Skipping...\x1b[0m`
+      );
+    } else {
+      fs.writeFileSync(setupPath, setupContent);
+      console.log(
+        `\x1b[32m\u2713 Created test setup file at ${setupPath}\x1b[0m`
+      );
+    }
+
+    // Step 4: Add test scripts to package.json
+    addScriptToPackageJson(targetPath, "test", "vitest");
+    addScriptToPackageJson(targetPath, "test:ui", "vitest --ui");
+    addScriptToPackageJson(targetPath, "test:run", "vitest run");
+    addScriptToPackageJson(targetPath, "test:coverage", "vitest --coverage");
+
+    // Step 5: Check if dependencies are installed and install them if needed
+    const vitestInstalled = checkVitestInstalled(targetPath);
+
+    console.log("\n\x1b[32m\u2713 Vitest setup complete!\x1b[0m");
+
+    if (!vitestInstalled) {
+      console.log(
+        "\n\x1b[33m\u26A0\uFE0F Installing required dependencies...\x1b[0m"
+      );
+
+      try {
+        // Install dev dependencies
+        console.log("Installing testing dependencies...");
+        execSync("pnpm add -D vitest @testing-library/react @testing-library/jest-dom jsdom", {
+          cwd: targetPath,
+          stdio: "inherit",
+        });
+
+        // Install react and react-dom as regular dependencies if not already present
+        const packageJsonContent = fs.readFileSync(packageJsonPath, "utf8");
+        const packageJson = JSON.parse(packageJsonContent);
+
+        const hasReact =
+          (packageJson.dependencies && packageJson.dependencies.react) ||
+          (packageJson.devDependencies && packageJson.devDependencies.react);
+
+        const hasReactDom =
+          (packageJson.dependencies && packageJson.dependencies["react-dom"]) ||
+          (packageJson.devDependencies && packageJson.devDependencies["react-dom"]);
+
+        if (!hasReact || !hasReactDom) {
+          console.log("Installing React dependencies...");
+          execSync("pnpm add react react-dom", {
+            cwd: targetPath,
+            stdio: "inherit",
+          });
+        }
+
+        console.log(
+          "\n\x1b[32m\u2705 Vitest dependencies installed successfully!\x1b[0m\n"
+        );
+      } catch (error) {
+        console.error(
+          `\n\x1b[31m\u274C Error installing dependencies: ${error.message}\x1b[0m`
+        );
+        console.log(
+          "\n\x1b[33m\u26A0\uFE0F Please install the dependencies manually by running:\x1b[0m"
+        );
+        console.log("\n  pnpm add -D vitest @testing-library/react @testing-library/jest-dom jsdom");
+        console.log("  pnpm add react react-dom\n");
+      }
+    } else {
+      console.log(
+        "\n\x1b[32m\u2705 Vitest dependencies are already installed. You're all set!\x1b[0m\n"
+      );
+    }
+
+    console.log("\n\n👉 \x1b[1mNext steps:\x1b[0m");
+    console.log("  pnpm test        # Run tests in watch mode");
+    console.log("  pnpm test:run    # Run tests once");
+    console.log("  pnpm test:ui     # Run tests with UI");
+    console.log("  pnpm test:coverage # Run tests with coverage\n\n");
+
+    console.log("\x1b[36m📝 Your test files should include:\x1b[0m");
+    console.log("  import { render, screen } from '@testing-library/react'");
+    console.log("  import { describe, it, expect } from 'vitest'\n");
+
+  } catch (error) {
+    console.error(
+      `\x1b[31mError setting up Vitest: ${error.message}\x1b[0m`
     );
     process.exit(1);
   }

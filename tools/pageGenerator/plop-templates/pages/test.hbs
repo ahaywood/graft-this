@@ -1,0 +1,16 @@
+import { render, screen } from '@testing-library/react'
+import { {{name}} } from './{{name}}'
+
+describe('{{name}}', () => {
+  it('renders successfully', () => {
+    const mockContext = {
+      ctx: {
+        user: null,
+        session: null
+      }
+    }
+    
+    render(<{{name}} {...mockContext} />)
+    expect(screen.getByText('{{name}} Page')).toBeInTheDocument()
+  })
+})
