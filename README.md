@@ -2,7 +2,9 @@
 
 This is a third-party set of command-line tools for installing utilitIES that work with [RedwoodSDK](https://rwsdk.com).
 
-<div style="position: relative; padding-bottom: 71.97278911564626%; height: 0;"><iframe src="https://www.loom.com/embed/d8562b61801d4a18ba4ef65967d8c10c?sid=200db6df-38ef-4994-8fef-6dfde0c9bf55" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+<a href="https://www.loom.com/share/d8562b61801d4a18ba4ef65967d8c10c">
+<img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/d8562b61801d4a18ba4ef65967d8c10c-a5eeed9d90150f85-full-play.gif">
+</a>
 
 ## Installation
 
